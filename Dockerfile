@@ -1,24 +1,33 @@
-FROM php:8.2-cli
+FROM php:8.2-apache
 
-# تثبيت المتطلبات
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     git unzip libzip-dev libpng-dev libonig-dev libxml2-dev \
     && docker-php-ext-install pdo pdo_mysql zip
 
-# تثبيت Composer
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+# Enable Apache rewrite
+RUN a2enmod rewrite
 
-# مجلد العمل
-WORKDIR /app
+# Set working directory
+WORKDIR /var/www/html
 
-# نسخ الملفات
+# Copy project
 COPY . .
 
-# تثبيت مكتبات Laravel
+# Install Composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+# Install dependencies
 RUN composer install --no-dev --optimize-autoloader
 
-# فتح البورت
-EXPOSE 10000
+# Laravel permissions
+RUN chown -R www-data:www-data storage bootstrap/cache
 
-# تشغيل Laravel
-CMD php artisan serve --host=0.0.0.0 --port=10000
+# Apache config
+ENV APACHE_DOCUMENT_ROOT /var/www/html/public
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' \
+    /etc/apache2/sites-available/*.conf \
+    /etc/apache2/apache2.conf \
+    /etc/apache2/conf-available/*.conf
+
+EXPOSE 80
