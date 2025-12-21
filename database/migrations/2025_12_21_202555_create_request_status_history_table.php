@@ -6,28 +6,25 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Run the migrations.
+     */
     public function up(): void
     {
         Schema::create('request_status_history', function (Blueprint $table) {
-            $table->id();
-
-            $table->foreignId('request_id')
-                ->constrained('blood_requests')
-                ->cascadeOnDelete();
-
+            $table->bigIncrements('id');
+            $table->unsignedBigInteger('request_id')->index('request_status_history_request_id_foreign');
             $table->string('old_status')->nullable();
             $table->string('new_status');
-
-            $table->foreignId('changed_by')
-                ->constrained('users')
-                ->cascadeOnDelete();
-
+            $table->unsignedBigInteger('changed_by')->index('request_status_history_changed_by_foreign');
             $table->timestamp('changed_at')->useCurrent();
-
             $table->timestamps();
         });
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
         Schema::dropIfExists('request_status_history');

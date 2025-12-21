@@ -6,32 +6,25 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Run the migrations.
+     */
     public function up(): void
     {
         Schema::create('appointments', function (Blueprint $table) {
-            $table->id();
-
-            $table->foreignId('donor_id')
-                ->constrained('users')
-                ->cascadeOnDelete();
-
-            $table->foreignId('hospital_id')
-                ->constrained('hospitals')
-                ->cascadeOnDelete();
-
-            $table->foreignId('request_id')
-                ->nullable()
-                ->constrained('blood_requests')
-                ->nullOnDelete();
-
+            $table->bigIncrements('id');
+            $table->unsignedBigInteger('donor_id')->index('appointments_donor_id_foreign');
+            $table->unsignedBigInteger('hospital_id')->index('appointments_hospital_id_foreign');
+            $table->unsignedBigInteger('request_id')->nullable()->index('appointments_request_id_foreign');
             $table->dateTime('date_time');
-
             $table->string('status')->default('pending');
-
             $table->timestamps();
         });
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
         Schema::dropIfExists('appointments');
