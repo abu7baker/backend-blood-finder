@@ -7,65 +7,88 @@ use GuzzleHttp\Client as HttpClient;
 
 class FCMService
 {
-    public static function send($deviceToken, $title, $body, $data = [])
+    protected static function getAccessToken()
     {
-        $projectId = env('FIREBASE_PROJECT_ID');
+        $path = storage_path('app/fcm-key.json');
 
-        // 1) Google Access Token
-        $client = new Client();
-        $client->setAuthConfig(storage_path('app/fcm-key.json'));
-        $client->addScope('https://www.googleapis.com/auth/firebase.messaging');
-        $token = $client->fetchAccessTokenWithAssertion()["access_token"];
+        // 🔐 أنشئ الملف من Base64 لو غير موجود
+        if (!file_exists($path)) {
+            $base64 = env('FCM_CREDENTIALS_BASE64');
 
-        // 2) Data fields (must be strings)
-        $stringData = [];
-        foreach ($data as $k => $v) {
-            $stringData[$k] = (string)$v;
+            if (!$base64) {
+                throw new \Exception('FCM credentials not found');
+            }
+
+            file_put_contents($path, base64_decode($base64));
         }
 
-        // 3) Full message format EXACTLY like Firebase Console
-        $message = [
-            "message" => [
-                "token" => $deviceToken,
+        $client = new Client();
+        $client->setAuthConfig($path);
+        $client->addScope('https://www.googleapis.com/auth/firebase.messaging');
 
-                // THIS IS WHAT SHOWS THE NOTIFICATION
-                "notification" => [
-                    "title" => $title,
-                    "body"  => $body,
-                ],
+        $tokenData = $client->fetchAccessTokenWithAssertion();
 
-                "android" => [
-                    "priority" => "HIGH",
+        if (!isset($tokenData['access_token'])) {
+            throw new \Exception('Failed to get Firebase access token');
+        }
+
+        return $tokenData['access_token'];
+    }
+
+    public static function send($deviceToken, $title, $body, $data = [])
+    {
+        try {
+            $projectId = env('FIREBASE_PROJECT_ID');
+            $accessToken = self::getAccessToken();
+
+            // 🧠 كل البيانات Strings
+            $stringData = [];
+            foreach ($data as $k => $v) {
+                $stringData[$k] = (string) $v;
+            }
+
+            $message = [
+                "message" => [
+                    "token" => $deviceToken,
 
                     "notification" => [
                         "title" => $title,
                         "body"  => $body,
-                        "sound" => "default",
-                        "channel_id" => "high_importance_channel",
-                        "click_action" => "FLUTTER_NOTIFICATION_CLICK",
                     ],
-                ],
 
-                // Data (optional)
-                "data" => array_merge($stringData, [
-                    "click_action" => "FLUTTER_NOTIFICATION_CLICK",
-                ]),
-            ]
-        ];
+                    "android" => [
+                        "priority" => "HIGH",
+                        "notification" => [
+                            "sound" => "default",
+                            "channel_id" => "high_importance_channel",
+                            "click_action" => "FLUTTER_NOTIFICATION_CLICK",
+                        ],
+                    ],
 
-        // 4) Send
-        $http = new HttpClient();
-        $response = $http->post(
-            "https://fcm.googleapis.com/v1/projects/$projectId/messages:send",
-            [
-                "headers" => [
-                    "Authorization" => "Bearer $token",
-                    "Content-Type" => "application/json",
-                ],
-                "json" => $message
-            ]
-        );
+                    "data" => array_merge($stringData, [
+                        "click_action" => "FLUTTER_NOTIFICATION_CLICK",
+                    ]),
+                ]
+            ];
 
-        return json_decode($response->getBody(), true);
+            $http = new HttpClient();
+            $response = $http->post(
+                "https://fcm.googleapis.com/v1/projects/{$projectId}/messages:send",
+                [
+                    "headers" => [
+                        "Authorization" => "Bearer {$accessToken}",
+                        "Content-Type" => "application/json",
+                    ],
+                    "json" => $message,
+                ]
+            );
+
+            return json_decode($response->getBody(), true);
+
+        } catch (\Throwable $e) {
+            // ❌ لا تكسر النظام
+            logger('FCM ERROR: ' . $e->getMessage());
+            return null;
+        }
     }
 }
