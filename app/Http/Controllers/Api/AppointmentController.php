@@ -43,7 +43,7 @@ class AppointmentController extends Controller
 
         $donor = User::find(auth()->id());
 
-        // 2️⃣ حفظ إشعار قاعدة البيانات (سريع)
+        // 2️⃣ حفظ إشعار قاعدة البيانات
         Notification::create([
             'user_id' => $donor->id,
             'title' => 'تم استلام طلب موعدك',
@@ -57,15 +57,45 @@ class AppointmentController extends Controller
         $hospitalUser = User::find($hospital->user_id);
         $hospitalToken = $hospitalUser?->fcm_token;
 
-        // 4️⃣ أرسل الرد فورًا ⚡ (هنا حل المشكلة)
+        // 4️⃣ أرسل الرد فورًا
         $response = response()->json([
             'success' => true,
             'message' => 'تم حجز التبرع بنجاح',
             'appointment' => $appointment,
         ], 201);
 
-        // 5️⃣ إرسال الإشعارات في الخلفية 🔥
-      
+        // 5️⃣ إرسال الإشعارات (آمن – لا يكسر الطلب)
+        if ($hospitalToken) {
+            try {
+                FCMService::send(
+                    $hospitalToken,
+                    'موعد تبرع جديد',
+                    'لديك طلب موعد تبرع جديد',
+                    [
+                        'type' => 'appointment_created',
+                        'appointment_id' => (string) $appointment->id,
+                    ]
+                );
+            } catch (\Throwable $e) {
+                logger('FCM STORE ERROR (HOSPITAL): ' . $e->getMessage());
+            }
+        }
+
+        if ($donorToken) {
+            try {
+                FCMService::send(
+                    $donorToken,
+                    'تم إنشاء الموعد',
+                    'تم إنشاء موعد تبرعك بنجاح',
+                    [
+                        'type' => 'appointment_created',
+                        'appointment_id' => (string) $appointment->id,
+                    ]
+                );
+            } catch (\Throwable $e) {
+                logger('FCM STORE ERROR (DONOR): ' . $e->getMessage());
+            }
+        }
 
         return $response;
     }
@@ -89,19 +119,22 @@ class AppointmentController extends Controller
             'is_read' => false,
         ]);
 
-        // 🔔 FCM
+        // 🔔 FCM (آمن)
         if ($donor && $donor->fcm_token) {
-            FCMService::send(
-                $donor->fcm_token,
-                "تم قبول الموعد",
-                "تمت الموافقة على موعد التبرع الخاص بك، نلقاك في الوقت المحدد ❤️",
-                [
-                    "click_action" => "FLUTTER_NOTIFICATION_CLICK",
-                    "type" => "appointment_approved",
-                    "appointment_id" => (string) $appointment->id,
-                    "donor_id" => (string) $donor->id,
-                ]
-            );
+            try {
+                FCMService::send(
+                    $donor->fcm_token,
+                    'تم قبول الموعد',
+                    'تمت الموافقة على موعد التبرع الخاص بك، نلقاك في الوقت المحدد ❤️',
+                    [
+                        'type' => 'appointment_approved',
+                        'appointment_id' => (string) $appointment->id,
+                        'donor_id' => (string) $donor->id,
+                    ]
+                );
+            } catch (\Throwable $e) {
+                logger('FCM APPROVE ERROR: ' . $e->getMessage());
+            }
         }
 
         return response()->json([
@@ -129,13 +162,21 @@ class AppointmentController extends Controller
             'is_read' => false,
         ]);
 
-        // 🔔 FCM
+        // 🔔 FCM (آمن)
         if ($donor && $donor->fcm_token) {
-            FCMService::send(
-                $donor->fcm_token,
-                "تم رفض الموعد",
-                "نأسف، تم رفض موعدك. الرجاء اختيار وقت آخر."
-            );
+            try {
+                FCMService::send(
+                    $donor->fcm_token,
+                    'تم رفض الموعد',
+                    'نأسف، تم رفض موعدك. الرجاء اختيار وقت آخر.',
+                    [
+                        'type' => 'appointment_rejected',
+                        'appointment_id' => (string) $appointment->id,
+                    ]
+                );
+            } catch (\Throwable $e) {
+                logger('FCM REJECT ERROR: ' . $e->getMessage());
+            }
         }
 
         return response()->json([
@@ -163,13 +204,21 @@ class AppointmentController extends Controller
             'is_read' => false,
         ]);
 
-        // 🔔 FCM
+        // 🔔 FCM (آمن)
         if ($donor && $donor->fcm_token) {
-            FCMService::send(
-                $donor->fcm_token,
-                "شكرًا لتبرعك ❤️",
-                "لقد ساهمت في إنقاذ حياة شخص ما! نشكرك من القلب ❤️"
-            );
+            try {
+                FCMService::send(
+                    $donor->fcm_token,
+                    'شكرًا لتبرعك ❤️',
+                    'لقد ساهمت في إنقاذ حياة شخص ما! نشكرك من القلب ❤️',
+                    [
+                        'type' => 'appointment_completed',
+                        'appointment_id' => (string) $appointment->id,
+                    ]
+                );
+            } catch (\Throwable $e) {
+                logger('FCM COMPLETE ERROR: ' . $e->getMessage());
+            }
         }
 
         return response()->json([
