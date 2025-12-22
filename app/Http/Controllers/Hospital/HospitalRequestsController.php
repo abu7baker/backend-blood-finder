@@ -100,6 +100,8 @@ class HospitalRequestsController extends Controller
                 'patient_age'    => $user->age,
                 'patient_gender' => $user->gender,
             ]);
+
+             
         }
         // الحالة: مريض آخر
         else {

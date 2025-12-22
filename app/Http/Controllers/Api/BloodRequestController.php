@@ -14,7 +14,7 @@ use App\Models\User;
 class BloodRequestController extends Controller
 {
     /**
-     * 🩸 إنشاء طلب دم من التطبيق
+     * 🩸 إنشاء طلب دم
      */
     public function store(Request $request)
     {
@@ -36,7 +36,6 @@ class BloodRequestController extends Controller
             'status'          => 'pending',
         ]);
 
-        // 🧾 تسجيل الحالة الأولى
         RequestStatusHistory::create([
             'request_id' => $bloodRequest->id,
             'old_status' => null,
@@ -45,23 +44,23 @@ class BloodRequestController extends Controller
             'changed_at' => now(),
         ]);
 
-        // 🔔 إشعار DB للمستخدم
         Notification::create([
             'user_id' => Auth::id(),
             'title'   => 'تم إرسال طلب الدم 🩸',
-            'body'    => 'تم إرسال طلبك بنجاح وسيتم مراجعته من المستشفى.',
+            'body'    => 'تم استلام طلب الدم وسيتم مراجعته من المستشفى في أقرب وقت.',
             'type'    => 'blood_request_created',
             'is_read' => false,
         ]);
 
         return response()->json([
+            'success' => true,
             'message' => 'تم إرسال طلب الدم بنجاح',
             'data'    => $bloodRequest,
         ], 201);
     }
 
     /**
-     * 📄 عرض جميع طلبات المستخدم
+     * 📄 طلبات المستخدم
      */
     public function index()
     {
@@ -69,26 +68,25 @@ class BloodRequestController extends Controller
             ->where('requester_id', Auth::id())
             ->latest()
             ->get()
-            ->map(function ($req) {
-                return [
-                    'id'              => $req->id,
-                    'hospital'        => $req->hospital->name,
-                    'blood_type'      => $req->blood_type,
-                    'units_requested' => $req->units_requested,
-                    'priority'        => $req->priority,
-                    'status'          => $req->status,
-                    'status_label'    => match ($req->status) {
-                        'approved'  => 'تم القبول',
-                        'rejected'  => 'مرفوض',
-                        'completed' => 'مكتمل',
-                        'cancelled' => 'ملغي',
-                        default     => 'قيد المراجعة',
-                    },
-                    'created_at' => $req->created_at->toDateTimeString(),
-                ];
-            });
+            ->map(fn ($req) => [
+                'id'              => $req->id,
+                'hospital'        => $req->hospital->name,
+                'blood_type'      => $req->blood_type,
+                'units_requested' => $req->units_requested,
+                'priority'        => $req->priority,
+                'status'          => $req->status,
+                'status_label'    => match ($req->status) {
+                    'approved'  => 'تم القبول',
+                    'rejected'  => 'مرفوض',
+                    'completed' => 'مكتمل',
+                    'cancelled' => 'ملغي',
+                    default     => 'قيد المراجعة',
+                },
+                'created_at' => $req->created_at->toDateTimeString(),
+            ]);
 
         return response()->json([
+            'success' => true,
             'data' => $requests,
         ]);
     }
@@ -99,21 +97,22 @@ class BloodRequestController extends Controller
     public function show($id)
     {
         $bloodRequest = BloodRequest::with([
-                'hospital',
-                'statusHistory',
-                'responders.user',
-                'donations',
-            ])
-            ->where('requester_id', Auth::id())
-            ->findOrFail($id);
+            'hospital',
+            'statusHistory',
+            'responders.user',
+            'donations',
+        ])
+        ->where('requester_id', Auth::id())
+        ->findOrFail($id);
 
         return response()->json([
+            'success' => true,
             'data' => $bloodRequest,
         ]);
     }
 
     /**
-     * ❌ إلغاء طلب دم
+     * ❌ إلغاء الطلب
      */
     public function cancel($id)
     {
@@ -121,57 +120,74 @@ class BloodRequestController extends Controller
             ->whereIn('status', ['pending', 'approved'])
             ->findOrFail($id);
 
-        $oldStatus = $bloodRequest->status;
-
-        $bloodRequest->update(['status' => 'cancelled']);
-
-        RequestStatusHistory::create([
-            'request_id' => $bloodRequest->id,
-            'old_status' => $oldStatus,
-            'new_status' => 'cancelled',
-            'changed_by' => Auth::id(),
-            'changed_at' => now(),
-        ]);
-
-        Notification::create([
-            'user_id' => Auth::id(),
-            'title'   => 'تم إلغاء طلب الدم',
-            'body'    => 'تم إلغاء طلبك بناءً على رغبتك.',
-            'type'    => 'blood_request_cancelled',
-            'is_read' => false,
-        ]);
+        $this->changeStatusInternal($bloodRequest, 'cancelled', Auth::id());
 
         return response()->json([
+            'success' => true,
             'message' => 'تم إلغاء طلب الدم بنجاح',
         ]);
     }
 
     /**
-     * 🔔 إشعار المستخدم عند تغيير حالة الطلب (من المستشفى)
+     * 🔔 تغيير حالة الطلب + إشعار (يُستدعى من المستشفى)
      */
-    public function notifyUserStatusChange(BloodRequest $request)
+    public function changeStatus(Request $request, $id)
     {
-        $user = User::find($request->requester_id);
+        $request->validate([
+            'status' => 'required|in:approved,rejected,completed',
+        ]);
+
+        $bloodRequest = BloodRequest::findOrFail($id);
+
+        $this->changeStatusInternal($bloodRequest, $request->status, Auth::id());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تم تحديث حالة طلب الدم بنجاح',
+            'data' => [
+                'request_id' => $bloodRequest->id,
+                'status' => $bloodRequest->status,
+            ]
+        ]);
+    }
+
+    /**
+     * 🧠 منطق موحّد لتغيير الحالة + الإشعارات
+     */
+    private function changeStatusInternal(BloodRequest $bloodRequest, string $newStatus, $changedBy)
+    {
+        $oldStatus = $bloodRequest->status;
+
+        $bloodRequest->update(['status' => $newStatus]);
+
+        RequestStatusHistory::create([
+            'request_id' => $bloodRequest->id,
+            'old_status' => $oldStatus,
+            'new_status' => $newStatus,
+            'changed_by' => $changedBy,
+            'changed_at' => now(),
+        ]);
+
+        $user = User::find($bloodRequest->requester_id);
 
         if (!$user) return;
 
-        // 🧠 رسالة احترافية حسب الحالة
-        $messages = match ($request->status) {
+        $messages = match ($newStatus) {
             'approved' => [
                 'title' => 'تم قبول طلب الدم 🩸',
-                'body'  => 'خبر طيب! المستشفى وافقت على طلب الدم، وسيتم التواصل معك قريبًا.',
+                'body'  => 'خبر سار! المستشفى وافقت على طلب الدم الخاص بك.',
             ],
             'rejected' => [
-                'title' => 'تعذر قبول طلب الدم',
-                'body'  => 'نعتذر، لم تتم الموافقة على طلب الدم. يمكنك المحاولة لاحقًا.',
+                'title' => 'تعذر توفير الدم ❌',
+                'body'  => 'نعتذر، لم يتم قبول طلب الدم حاليًا.',
             ],
             'completed' => [
-                'title' => 'تم توفير الدم بنجاح ❤️',
-                'body'  => 'الحمد لله، تم توفير وحدات الدم المطلوبة. نتمنى السلامة للجميع.',
+                'title' => 'تم توفير الدم ❤️',
+                'body'  => 'الحمد لله، تم توفير وحدات الدم المطلوبة.',
             ],
             'cancelled' => [
                 'title' => 'تم إلغاء طلب الدم',
-                'body'  => 'تم إلغاء طلب الدم بناءً على تحديث من المستشفى.',
+                'body'  => 'تم إلغاء طلب الدم بناءً على التحديث الأخير.',
             ],
             default => [
                 'title' => 'تحديث حالة طلب الدم',
@@ -179,16 +195,14 @@ class BloodRequestController extends Controller
             ],
         };
 
-        // 🔔 إشعار قاعدة البيانات
         Notification::create([
             'user_id' => $user->id,
             'title'   => $messages['title'],
             'body'    => $messages['body'],
-            'type'    => 'blood_request_status_changed',
+            'type'    => 'blood_request_status',
             'is_read' => false,
         ]);
 
-        // 🔔 FCM (آمن)
         if ($user->fcm_token) {
             try {
                 FCMService::send(
@@ -196,9 +210,9 @@ class BloodRequestController extends Controller
                     $messages['title'],
                     $messages['body'],
                     [
-                        'type'        => 'blood_request_status_changed',
-                        'request_id'  => (string) $request->id,
-                        'status'      => $request->status,
+                        'type'       => 'blood_request',
+                        'request_id' => (string) $bloodRequest->id,
+                        'status'     => $newStatus,
                     ]
                 );
             } catch (\Throwable $e) {
