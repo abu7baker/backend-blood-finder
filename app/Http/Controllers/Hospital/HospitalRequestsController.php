@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\BloodRequest;
 use App\Models\BloodStock;
 use App\Models\Notification;
+use App\Models\RequestStatusHistory;
+use App\Models\User;
+use App\Services\FCMService;
 use Illuminate\Http\Request;
 
 class HospitalRequestsController extends Controller
@@ -44,14 +47,13 @@ class HospitalRequestsController extends Controller
     public function showJson($id)
     {
         $request = BloodRequest::with(['requester', 'hospital'])->findOrFail($id);
-
         $this->authorizeHospital($request);
 
         return response()->json($request);
     }
 
     /* =====================================================
-       تحديث حالة الطلب
+       تحديث حالة الطلب (✔ DB + ✔ Push + ✔ Donors)
     ===================================================== */
     public function updateStatus(Request $request, $id)
     {
@@ -60,20 +62,82 @@ class HospitalRequestsController extends Controller
         ]);
 
         $bloodRequest = BloodRequest::with('requester')->findOrFail($id);
-
         $this->authorizeHospital($bloodRequest);
+
+        $oldStatus = $bloodRequest->status;
+
+        if ($oldStatus === $request->status) {
+            return response()->json([
+                'success' => false,
+                'message' => 'الحالة لم تتغير',
+            ]);
+        }
 
         $bloodRequest->update([
             'status' => $request->status
         ]);
 
-        // إشعار لمقدم الطلب (المستخدم أو المستشفى)
+        /* 📝 تسجيل تغيير الحالة */
+        RequestStatusHistory::create([
+            'request_id' => $bloodRequest->id,
+            'old_status' => $oldStatus,
+            'new_status' => $request->status,
+            'changed_by' => auth()->id(),
+            'changed_at' => now(),
+        ]);
+
+        /* ========= رسائل المستخدم ========= */
+        $messages = [
+            'approved' => [
+                'title' => 'تمت الموافقة على طلب الدم 🩸',
+                'body'  => 'خبر سار! تمت الموافقة على طلبك وسيتم إشعار المتبرعين المناسبين في نفس المدينة.',
+            ],
+            'rejected' => [
+                'title' => 'تعذر توفير الدم ❌',
+                'body'  => 'نعتذر، لم تتم الموافقة على طلب الدم في الوقت الحالي.',
+            ],
+            'completed' => [
+                'title' => 'تم توفير الدم ❤️',
+                'body'  => 'تم توفير وحدات الدم المطلوبة. نسأل الله لك الشفاء.',
+            ],
+            'pending' => [
+                'title' => 'طلب الدم قيد المراجعة',
+                'body'  => 'طلبك قيد المراجعة حالياً من قبل المستشفى.',
+            ],
+        ];
+
+        $msg = $messages[$request->status];
+
+        /* ========= إشعار صاحب الطلب ========= */
         Notification::create([
             'user_id' => $bloodRequest->requester_id,
-            'title'   => 'تحديث حالة طلب الدم',
-            'body'    => 'تم تحديث حالة طلبك إلى: ' . $request->status,
+            'title'   => $msg['title'],
+            'body'    => $msg['body'],
             'type'    => 'blood_request',
+            'is_read' => false,
         ]);
+
+        if ($bloodRequest->requester && $bloodRequest->requester->fcm_token) {
+            try {
+                FCMService::send(
+                    $bloodRequest->requester->fcm_token,
+                    $msg['title'],
+                    $msg['body'],
+                    [
+                        'type'       => 'blood_request',
+                        'request_id' => (string) $bloodRequest->id,
+                        'status'     => $request->status,
+                    ]
+                );
+            } catch (\Throwable $e) {
+                logger('FCM USER ERROR: ' . $e->getMessage());
+            }
+        }
+
+        /* ========= إشعار المتبرعين عند الموافقة ========= */
+        if ($request->status === 'approved') {
+            $this->notifyEligibleDonors($bloodRequest);
+        }
 
         return response()->json([
             'success' => true,
@@ -82,17 +146,65 @@ class HospitalRequestsController extends Controller
     }
 
     /* =====================================================
+       🧑‍🦰 إشعار المتبرعين (DB + FCM)
+    ===================================================== */
+    private function notifyEligibleDonors(BloodRequest $request)
+    {
+        $hospitalCity = auth()->user()->hospital->city ?? null;
+
+        $donors = User::eligibleDonors()
+            ->where('blood_type', $request->blood_type)
+            ->when($hospitalCity, fn ($q) => $q->where('city', $hospitalCity))
+            ->get();
+
+        logger('DONOR ALERT DEBUG', [
+            'request_id' => $request->id,
+            'donors_count' => $donors->count(),
+            'city' => $hospitalCity,
+        ]);
+
+        foreach ($donors as $donor) {
+
+            // 🗂 حفظ الإشعار في DB
+            Notification::create([
+                'user_id' => $donor->id,
+                'title'   => '🩸 يوجد طلب تبرع بالدم',
+                'body'    => "يوجد طلب دم معتمد لفصيلة {$request->blood_type} في مدينة {$hospitalCity}.",
+                'type'    => 'blood_request_donor_alert',
+                'is_read' => false,
+            ]);
+
+            // 📲 Push Notification
+            if ($donor->fcm_token) {
+                try {
+                    FCMService::send(
+                        $donor->fcm_token,
+                        '🩸 يوجد طلب تبرع بالدم',
+                        "يوجد طلب دم معتمد لفصيلة {$request->blood_type} في مدينة {$hospitalCity}.",
+                        [
+                            'type'       => 'blood_request',
+                            'request_id' => (string) $request->id,
+                            'status'     => 'approved',
+                            'blood_type' => $request->blood_type,
+                            'city'       => $hospitalCity,
+                        ]
+                    );
+                } catch (\Throwable $e) {
+                    logger('FCM DONOR ERROR: ' . $e->getMessage());
+                }
+            }
+        }
+    }
+
+    /* =====================================================
        حفظ بيانات المريض
     ===================================================== */
     public function savePatientInfo(Request $request, $id)
     {
         $bloodRequest = BloodRequest::with('requester')->findOrFail($id);
-
         $this->authorizeHospital($bloodRequest);
 
-        // الحالة: المريض هو مقدم الطلب
         if ($request->has('use_requester')) {
-
             $user = $bloodRequest->requester;
 
             $bloodRequest->update([
@@ -100,12 +212,7 @@ class HospitalRequestsController extends Controller
                 'patient_age'    => $user->age,
                 'patient_gender' => $user->gender,
             ]);
-
-             
-        }
-        // الحالة: مريض آخر
-        else {
-
+        } else {
             $request->validate([
                 'patient_name'   => 'required|string|max:255',
                 'patient_age'    => 'required|integer|min:0',
@@ -114,13 +221,9 @@ class HospitalRequestsController extends Controller
                 'diagnosis'      => 'nullable|string|max:255',
             ]);
 
-            $bloodRequest->update([
-                'patient_name'   => $request->patient_name,
-                'patient_age'    => $request->patient_age,
-                'patient_gender' => $request->patient_gender,
-                'doctor_name'    => $request->doctor_name,
-                'diagnosis'      => $request->diagnosis,
-            ]);
+            $bloodRequest->update($request->only([
+                'patient_name','patient_age','patient_gender','doctor_name','diagnosis'
+            ]));
         }
 
         return redirect()
@@ -145,36 +248,24 @@ class HospitalRequestsController extends Controller
         ]);
 
         $hospital = auth()->user()->hospital;
+        if (!$hospital) abort(403);
 
-        if (!$hospital) {
-            abort(403, 'هذا الحساب غير مرتبط بمستشفى');
-        }
-
-        /* =========================
-           فحص المخزون
-        ========================= */
         $stock = BloodStock::where('hospital_id', $hospital->id)
             ->where('blood_type', $request->blood_type)
             ->first();
 
         if ($stock && $stock->units_available >= $request->units_requested) {
-
             Notification::create([
                 'user_id' => $hospital->user_id,
                 'title'   => 'تنبيه مخزون الدم',
-                'body'    => "لديك {$stock->units_available} وحدة من فصيلة {$request->blood_type} في المخزون.",
+                'body'    => "المخزون يحتوي على {$stock->units_available} وحدة من فصيلة {$request->blood_type}.",
                 'type'    => 'stock_alert',
             ]);
 
-            return redirect()
-                ->back()
-                ->with('error', 'هذه الفصيلة متوفرة في المخزون.');
+            return redirect()->back()->with('error', 'هذه الفصيلة متوفرة في المخزون.');
         }
 
-        /* =========================
-           إنشاء الطلب
-        ========================= */
-        $bloodRequest = BloodRequest::create([
+        BloodRequest::create([
             'requester_id'    => auth()->id(),
             'hospital_id'     => $hospital->id,
             'patient_name'    => $request->patient_name,
@@ -188,20 +279,13 @@ class HospitalRequestsController extends Controller
             'status'          => 'pending',
         ]);
 
-        Notification::create([
-            'user_id' => $hospital->user_id,
-            'title'   => 'تم إنشاء طلب دم',
-            'body'    => "تم إنشاء طلب دم للمريض {$bloodRequest->patient_name}",
-            'type'    => 'blood_request',
-        ]);
-
         return redirect()
             ->route('hospital.requests.index')
             ->with('success', 'تم إرسال طلب الدم بنجاح');
     }
 
     /* =====================================================
-       حماية الوصول (مشتركة)
+       حماية الوصول
     ===================================================== */
     private function authorizeHospital(BloodRequest $request)
     {

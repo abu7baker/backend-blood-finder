@@ -25,7 +25,7 @@ class User extends Authenticatable
         'donation_eligibility',
         'role_id',
         'is_verified',
-
+        'status',
         // 🔐 Email OTP
         'email_verification_code',
         'email_verification_expires_at',
@@ -44,9 +44,9 @@ class User extends Authenticatable
     ];
 
     protected $casts = [
-        'email_verified_at'              => 'datetime',
-        'email_verification_expires_at'  => 'datetime',
-        'last_donation_date'             => 'date',
+        'email_verified_at' => 'datetime',
+        'email_verification_expires_at' => 'datetime',
+        'last_donation_date' => 'date',
         // 'password' => 'hashed',
     ];
 
@@ -96,20 +96,23 @@ class User extends Authenticatable
 
     public function scopeDonors($query)
     {
-        return $query->whereHas('role', fn ($q) => $q->where('name', 'donor'));
+        return $query->whereHas('role', fn($q) => $q->where('name', 'donor'));
     }
 
     public function scopePatients($query)
     {
-        return $query->whereHas('role', fn ($q) => $q->where('name', 'patient'));
+        return $query->whereHas('role', fn($q) => $q->where('name', 'patient'));
     }
+public function scopeEligibleDonors($query)
+{
+    return $query
+        ->where('donation_eligibility', 'eligible')
+        ->where('status', 'active')
+        ->where('is_verified', 1)
+        ->whereNotNull('blood_type')
+        ->whereNotNull('city');
+}
 
-    public function scopeEligibleDonors($query)
-    {
-        return $query
-            ->donors()
-            ->where('donation_eligibility', 'eligible');
-    }
 
     public function scopeByBloodType($query, string $bloodType)
     {

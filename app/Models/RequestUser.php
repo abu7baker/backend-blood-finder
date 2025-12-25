@@ -2,15 +2,18 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class RequestUser extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
-        'request_id',
+        'blood_request_id',
         'user_id',
-        'role_in_request', // donor
-        'status',          // pending | accepted | rejected
+        'role_in_request',
+        'status',
         'responded_at',
     ];
 
@@ -18,15 +21,33 @@ class RequestUser extends Model
         'responded_at' => 'datetime',
     ];
 
-    /* ================= العلاقات ================= */
+    /* =====================
+       العلاقات
+    ===================== */
 
-    public function request()
+    // الطلب المرتبط
+    public function bloodRequest()
     {
-        return $this->belongsTo(BloodRequest::class, 'request_id');
+        return $this->belongsTo(BloodRequest::class);
     }
 
+    // المستخدم (المتبرع)
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    /* =====================
+       Scopes (اختياري لكنها مفيدة)
+    ===================== */
+
+    public function scopePending($query)
+    {
+        return $query->where('status', 'pending');
+    }
+
+    public function scopeAccepted($query)
+    {
+        return $query->where('status', 'accepted');
     }
 }

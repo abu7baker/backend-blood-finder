@@ -7,176 +7,195 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Database\QueryException;
 use Carbon\Carbon;
+use Throwable;
 
 class AuthController extends Controller
 {
     /* =====================================================
-     |  تسجيل مستخدم جديد (مع OTP عبر الإيميل)
+     |  تسجيل مستخدم جديد (مع OTP)
      ===================================================== */
     public function register(Request $request)
     {
-        $data = $request->validate([
-            'full_name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'phone' => 'nullable|string|max:20|unique:users,phone',
-            'age' => 'nullable|integer|min:18|max:70',
-            'gender' => 'nullable|in:male,female',
-            'city' => 'nullable|string|max:255',
-            'blood_type' => 'nullable|string|max:10',
-            'chronic_disease' => 'nullable|string|max:255',
-            'emergency_phone' => 'nullable|string|max:20',
-            'password' => 'required|string|min:6',
-        ]);
+        try {
+            // ✅ Validation
+            $data = $request->validate([
+                'full_name' => 'required|string|max:255',
+                'email' => 'required|email|unique:users,email',
+                'phone' => 'nullable|string|max:20|unique:users,phone',
+                'age' => 'nullable|integer|min:18|max:70',
+                'gender' => 'nullable|in:male,female',
+                'city' => 'nullable|string|max:255',
+                'blood_type' => 'nullable|string|max:10',
+                'chronic_disease' => 'nullable|string|max:255',
+                'emergency_phone' => 'nullable|string|max:20',
+                'password' => 'required|string|min:6',
+            ]);
 
-        // 🔐 توليد OTP
-        $otp = rand(100000, 999999);
-
-        $data['password'] = Hash::make($data['password']);
-        $data['role_id'] = 3;
-        $data['is_verified'] = false;
-        $data['email_verification_code'] = $otp;
-        $data['email_verification_expires_at'] = now()->addMinutes(10);
-
-        $user = User::create($data);
-
-        // ✉️ إرسال OTP إلى الإيميل
-        Mail::raw(
-            "مرحباً {$user->full_name}\n\nرمز التحقق الخاص بك هو: {$otp}\n\nالرمز صالح لمدة 10 دقائق.",
-            function ($message) use ($user) {
-                $message->to($user->email)
-                        ->subject('رمز التحقق من البريد الإلكتروني');
+            // ✅ تحويل القيم الفارغة إلى null
+            foreach ($data as $key => $value) {
+                if ($value === '') {
+                    $data[$key] = null;
+                }
             }
-        );
 
-        return response()->json([
-            'success' => true,
-            'message' => 'تم إنشاء الحساب، تم إرسال رمز التحقق إلى البريد الإلكتروني',
-            'needs_verification' => true,
-        ]);
+            // 🔐 OTP
+            $otp = rand(100000, 999999);
+
+            $data['password'] = Hash::make($data['password']);
+            $data['role_id'] = 3;
+            $data['donation_eligibility'] = 'eligible';
+            $data['is_verified'] = false;
+            $data['email_verification_code'] = $otp;
+            $data['email_verification_expires_at'] = now()->addMinutes(10);
+
+            $user = User::create($data);
+
+            // ✉️ إرسال الإيميل
+            Mail::raw(
+                "مرحباً {$user->full_name}\n\nرمز التحقق: {$otp}\n\nالرمز صالح لمدة 10 دقائق.",
+                fn ($message) =>
+                    $message->to($user->email)
+                            ->subject('رمز التحقق من البريد الإلكتروني')
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'تم إنشاء الحساب، تم إرسال رمز التحقق إلى البريد الإلكتروني',
+                'needs_verification' => true,
+            ], 200);
+
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'type' => 'validation_error',
+                'message' => 'خطأ في البيانات المدخلة',
+                'errors' => $e->errors(),
+            ], 422);
+
+        } catch (QueryException $e) {
+            return response()->json([
+                'success' => false,
+                'type' => 'database_error',
+                'message' => 'خطأ في قاعدة البيانات',
+                'error' => $e->getMessage(),
+            ], 500);
+
+        } catch (Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'type' => 'server_error',
+                'message' => 'حدث خطأ غير متوقع',
+                'error' => config('app.debug') ? $e->getMessage() : null,
+            ], 500);
+        }
     }
 
     /* =====================================================
-     |  التحقق من رمز الإيميل (OTP)
+     |  التحقق من OTP
      ===================================================== */
     public function verifyEmailOtp(Request $request)
     {
-        $request->validate([
-            'email' => 'required|email',
-            'otp' => 'required|string',
-        ]);
+        try {
+            $request->validate([
+                'email' => 'required|email',
+                'otp' => 'required|string',
+            ]);
 
-        $user = User::where('email', $request->email)->first();
+            $user = User::where('email', $request->email)->first();
 
-        if (
-            !$user ||
-            $user->email_verification_code !== $request->otp ||
-            Carbon::now()->greaterThan($user->email_verification_expires_at)
-        ) {
-            return response()->json([
-                'success' => false,
-                'message' => 'رمز التحقق غير صحيح أو منتهي',
-            ], 422);
-        }
-
-        // ✅ تفعيل الحساب
-        $user->update([
-            'is_verified' => true,
-            'email_verified_at' => now(),
-            'email_verification_code' => null,
-            'email_verification_expires_at' => null,
-        ]);
-
-        $token = $user->createToken('auth_token')->plainTextToken;
-
-        return response()->json([
-            'success' => true,
-            'message' => 'تم تفعيل الحساب بنجاح',
-            'token' => $token,
-            'user' => $user,
-        ]);
-    }
-
-    /* =====================================================
-     |  إعادة إرسال رمز التحقق
-     ===================================================== */
-    public function resendEmailOtp(Request $request)
-    {
-        $request->validate([
-            'email' => 'required|email',
-        ]);
-
-        $user = User::where('email', $request->email)->first();
-
-        if (!$user || $user->is_verified) {
-            return response()->json([
-                'success' => false,
-                'message' => 'الحساب غير موجود أو مفعل مسبقًا',
-            ], 422);
-        }
-
-        $otp = rand(100000, 999999);
-
-        $user->update([
-            'email_verification_code' => $otp,
-            'email_verification_expires_at' => now()->addMinutes(10),
-        ]);
-
-        Mail::raw(
-            "رمز التحقق الجديد هو: {$otp}\nالرمز صالح لمدة 10 دقائق.",
-            function ($message) use ($user) {
-                $message->to($user->email)
-                        ->subject('إعادة إرسال رمز التحقق');
+            if (
+                !$user ||
+                $user->email_verification_code !== $request->otp ||
+                Carbon::now()->greaterThan($user->email_verification_expires_at)
+            ) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'رمز التحقق غير صحيح أو منتهي',
+                ], 422);
             }
-        );
 
-        return response()->json([
-            'success' => true,
-            'message' => 'تم إعادة إرسال رمز التحقق',
-        ]);
+            $user->update([
+                'is_verified' => true,
+                'email_verified_at' => now(),
+                'email_verification_code' => null,
+                'email_verification_expires_at' => null,
+            ]);
+
+            $token = $user->createToken('auth_token')->plainTextToken;
+
+            return response()->json([
+                'success' => true,
+                'message' => 'تم تفعيل الحساب بنجاح',
+                'token' => $token,
+                'user' => $user,
+            ]);
+
+        } catch (Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'خطأ أثناء التحقق',
+                'error' => config('app.debug') ? $e->getMessage() : null,
+            ], 500);
+        }
     }
 
     /* =====================================================
-     |  تسجيل الدخول (هاتف + كلمة المرور)
+     |  تسجيل الدخول
      ===================================================== */
     public function login(Request $request)
     {
-        $request->validate([
-            'phone' => 'required',
-            'password' => 'required',
-        ]);
+        try {
+            $request->validate([
+                'phone' => 'required',
+                'password' => 'required',
+            ]);
 
-        $user = User::where('phone', $request->phone)->first();
+            $user = User::where('phone', $request->phone)->first();
 
-        if (
-            !$user ||
-            !Hash::check($request->password, $user->password)
-        ) {
+            if (!$user || !Hash::check($request->password, $user->password)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'رقم الهاتف أو كلمة المرور غير صحيحة',
+                ], 401);
+            }
+
+            if (!$user->is_verified) {
+                return response()->json([
+                    'success' => false,
+                    'needs_verification' => true,
+                    'message' => 'يرجى تفعيل الحساب عبر البريد الإلكتروني',
+                ], 403);
+            }
+
+            $token = $user->createToken('auth_token')->plainTextToken;
+
+            return response()->json([
+                'success' => true,
+                'message' => 'تم تسجيل الدخول بنجاح',
+                'token' => $token,
+                'user' => $user,
+            ]);
+
+        } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'رقم الهاتف أو كلمة المرور غير صحيحة',
-            ], 401);
-        }
+                'message' => 'بيانات غير صحيحة',
+                'errors' => $e->errors(),
+            ], 422);
 
-        if (!$user->is_verified) {
+        } catch (Throwable $e) {
             return response()->json([
                 'success' => false,
-                'needs_verification' => true,
-                'message' => 'يرجى تفعيل الحساب عبر البريد الإلكتروني',
-            ], 403);
+                'message' => 'خطأ في تسجيل الدخول',
+                'error' => config('app.debug') ? $e->getMessage() : null,
+            ], 500);
         }
-
-        $token = $user->createToken('auth_token')->plainTextToken;
-
-        return response()->json([
-            'success' => true,
-            'message' => 'تم تسجيل الدخول بنجاح',
-            'token' => $token,
-            'user' => $user,
-        ]);
     }
 
-    /* =====================================================
+    /*  =====================================================
      |  تسجيل الدخول عبر Google (يبقى كما هو)
      ===================================================== */
     public function googleLogin(Request $request)

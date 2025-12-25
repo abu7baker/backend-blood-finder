@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -18,7 +17,14 @@ return new class extends Migration
             $table->enum('blood_type', ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-']);
             $table->integer('units_requested');
             $table->enum('priority', ['normal', 'urgent', 'critical'])->default('normal');
-            $table->enum('status', ['pending', 'approved', 'rejected', 'completed'])->default('pending');
+            $table->enum('status', [
+                'pending',
+                'approved',
+                'rejected',
+                'completed',
+                'cancelled'
+            ])->default('pending');
+
             $table->text('notes')->nullable();
             $table->string('patient_name')->nullable();
             $table->string('patient_gender')->nullable();
