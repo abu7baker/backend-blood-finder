@@ -13,7 +13,7 @@ class RequestUser extends Model
         'blood_request_id',
         'user_id',
         'role_in_request',
-        'status',
+        'status',        // pending | accepted | unavailable
         'responded_at',
     ];
 
@@ -21,25 +21,15 @@ class RequestUser extends Model
         'responded_at' => 'datetime',
     ];
 
-    /* =====================
-       العلاقات
-    ===================== */
-
-    // الطلب المرتبط
     public function bloodRequest()
     {
-        return $this->belongsTo(BloodRequest::class);
+        return $this->belongsTo(BloodRequest::class, 'blood_request_id');
     }
 
-    // المستخدم (المتبرع)
     public function user()
     {
         return $this->belongsTo(User::class);
     }
-
-    /* =====================
-       Scopes (اختياري لكنها مفيدة)
-    ===================== */
 
     public function scopePending($query)
     {
@@ -49,5 +39,10 @@ class RequestUser extends Model
     public function scopeAccepted($query)
     {
         return $query->where('status', 'accepted');
+    }
+
+    public function scopeUnavailable($query)
+    {
+        return $query->where('status', 'unavailable');
     }
 }

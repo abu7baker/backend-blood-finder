@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Models\RequestUser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use App\Services\FCMService;
 
 class BloodRequestController extends Controller
@@ -20,21 +21,21 @@ class BloodRequestController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'hospital_id'     => 'required|exists:users,id',
-            'blood_type'      => 'required|string',
+            'hospital_id' => 'required|exists:users,id',
+            'blood_type' => 'required|string',
             'units_requested' => 'required|integer|min:1',
-            'priority'        => 'required|in:normal,urgent',
-            'notes'           => 'nullable|string',
+            'priority' => 'required|in:normal,urgent',
+            'notes' => 'nullable|string',
         ]);
 
         $bloodRequest = BloodRequest::create([
-            'requester_id'    => Auth::id(),
-            'hospital_id'     => $request->hospital_id,
-            'blood_type'      => $request->blood_type,
+            'requester_id' => Auth::id(),
+            'hospital_id' => $request->hospital_id,
+            'blood_type' => $request->blood_type,
             'units_requested' => $request->units_requested,
-            'priority'        => $request->priority,
-            'notes'           => $request->notes,
-            'status'          => 'pending',
+            'priority' => $request->priority,
+            'notes' => $request->notes,
+            'status' => 'pending',
         ]);
 
         $this->logStatus($bloodRequest, null, 'pending', Auth::id());
@@ -46,7 +47,10 @@ class BloodRequestController extends Controller
             $bloodRequest
         );
 
-        return response()->json(['success' => true, 'data' => $bloodRequest], 201);
+        return response()->json([
+            'success' => true,
+            'data' => $bloodRequest
+        ], 201);
     }
 
     /* =====================================================
@@ -55,7 +59,7 @@ class BloodRequestController extends Controller
     public function changeStatus(Request $request, $id)
     {
         $request->validate([
-            'status' => 'required|in:approved,rejected,completed',
+            'status' => 'required|in:approved,completed',
         ]);
 
         $bloodRequest = BloodRequest::findOrFail($id);
@@ -74,24 +78,27 @@ class BloodRequestController extends Controller
      ===================================================== */
     private function changeStatusInternal(BloodRequest $bloodRequest, string $newStatus, int $changedBy)
     {
-        if ($bloodRequest->status === $newStatus) return;
+        if ($bloodRequest->status === $newStatus) {
+            return;
+        }
 
         $oldStatus = $bloodRequest->status;
         $bloodRequest->update(['status' => $newStatus]);
 
         $this->logStatus($bloodRequest, $oldStatus, $newStatus, $changedBy);
 
-        // إشعار المريض
+        // إشعار صاحب الطلب
         $requester = User::find($bloodRequest->requester_id);
         if ($requester) {
             $this->notifyUser(
                 $requester,
-                'تمت الموافقة على طلب الدم 🩸',
-                'تمت الموافقة وسيتم إشعار المتبرعين المناسبين.',
+                'تم تحديث حالة طلب الدم 🩸',
+                'تم تحديث حالة طلبك، يرجى متابعة الإشعارات.',
                 $bloodRequest
             );
         }
 
+        // عند الموافقة → إشعار المتبرعين
         if ($newStatus === 'approved') {
             $this->notifyEligibleDonors($bloodRequest);
         }
@@ -102,7 +109,8 @@ class BloodRequestController extends Controller
      ===================================================== */
     private function notifyEligibleDonors(BloodRequest $request)
     {
-        $city = User::where('id', $request->hospital_id)->value('city');
+        $hospital = User::findOrFail($request->hospital_id);
+        $city = $hospital->city;
 
         $donors = User::eligibleDonors()
             ->where('blood_type', $request->blood_type)
@@ -111,36 +119,39 @@ class BloodRequestController extends Controller
 
         foreach ($donors as $donor) {
 
-            // منع التكرار
-            $exists = RequestUser::where('request_id', $request->id)
+            $exists = RequestUser::where('blood_request_id', $request->id)
                 ->where('user_id', $donor->id)
                 ->exists();
 
-            if ($exists) continue;
+            if ($exists) {
+                continue;
+            }
 
             RequestUser::create([
-                'request_id'      => $request->id,
-                'user_id'         => $donor->id,
+                'blood_request_id' => $request->id,
+                'user_id' => $donor->id,
                 'role_in_request' => 'donor',
-                'response_status' => 'pending',
+                'status' => 'pending',
             ]);
 
+            $body = "مستشفى {$hospital->name} يطلب دم لفصيلة {$request->blood_type} في مدينتك. هل تستطيع التبرع؟";
+
             Notification::create([
-                'user_id'    => $donor->id,
-                'title'      => '🩸 يوجد طلب تبرع بالدم',
-                'body'       => "يوجد طلب دم لفصيلة {$request->blood_type} في مدينتك. هل تستطيع التبرع؟",
-                'type'       => 'blood_request_donor_alert',
-                'is_read'    => false,
-                'request_id' => $request->id, // 🔥 مهم لفلتر
+                'user_id' => $donor->id,
+                'title' => '🩸 يوجد طلب تبرع بالدم',
+                'body' => $body,
+                'type' => 'blood_request_donor_alert',
+                'is_read' => false,
+                'request_id' => $request->id,
             ]);
 
             if ($donor->fcm_token) {
                 FCMService::send(
                     $donor->fcm_token,
                     '🩸 طلب تبرع بالدم',
-                    'اضغط للموافقة أو الرفض',
+                    $body,
                     [
-                        'type'       => 'donor_alert',
+                        'type' => 'donor_alert',
                         'request_id' => (string) $request->id,
                     ]
                 );
@@ -154,57 +165,105 @@ class BloodRequestController extends Controller
     public function respondToRequest(Request $request, $id)
     {
         $request->validate([
-            'response' => 'required|in:accepted,rejected',
+            'response' => 'required|in:accepted,unavailable',
         ]);
 
-        // فقط متبرع
-        if (Auth::user()->role_id !== 3) {
+        if ((int) Auth::user()->role_id !== 3) {
             return response()->json(['message' => 'غير مصرح'], 403);
         }
 
-        $pivot = RequestUser::where('request_id', $id)
-            ->where('user_id', Auth::id())
-            ->firstOrFail();
+        return DB::transaction(function () use ($request, $id) {
 
-        if ($pivot->response_status !== 'pending') {
-            return response()->json(['message' => 'تم الرد مسبقًا'], 409);
-        }
+            $bloodRequest = BloodRequest::lockForUpdate()->findOrFail($id);
 
-        $pivot->update([
-            'response_status' => $request->response,
-            'responded_at'    => now(),
-        ]);
+            // ✅ المتبرع يرد فقط إذا كان الطلب approved
+            if ($bloodRequest->status !== 'approved') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'هذا الطلب غير متاح حالياً'
+                ], 409);
+            }
 
-        if ($request->response === 'accepted') {
+            $pivot = RequestUser::where('blood_request_id', $id)
+                ->where('user_id', Auth::id())
+                ->lockForUpdate()
+                ->first();
 
-            $bloodRequest = BloodRequest::findOrFail($id);
+            if (!$pivot) {
+                // إنشاء السجل إذا لم يكن موجوداً
+                $pivot = RequestUser::create([
+                    'blood_request_id' => $id,
+                    'user_id' => Auth::id(),
+                    'role_in_request' => 'donor',
+                    'status' => 'pending',
+                ]);
+            }
 
-            // إغلاق الطلب
-            $bloodRequest->update(['status' => 'completed']);
-            $this->logStatus($bloodRequest, 'approved', 'completed', Auth::id());
 
-            // رفض بقية المتبرعين
-            RequestUser::where('request_id', $id)
-                ->where('user_id', '!=', Auth::id())
-                ->update(['response_status' => 'rejected']);
+            if ($pivot->status !== 'pending') {
+                return response()->json(['message' => 'تم الرد مسبقاً'], 409);
+            }
 
-            // إشعار المستشفى والمريض
-            $this->notifyUser(
-                User::find($bloodRequest->hospital_id),
-                'تم العثور على متبرع 🩸',
-                'تمت موافقة أحد المتبرعين على الطلب.',
-                $bloodRequest
-            );
+            $pivot->update([
+                'status' => $request->response,
+                'responded_at' => now(),
+            ]);
 
-            $this->notifyUser(
-                User::find($bloodRequest->requester_id),
-                'تم تأكيد التبرع ❤️',
-                'تم العثور على متبرع مناسب، نسأل الله لك الشفاء.',
-                $bloodRequest
-            );
-        }
+            // =================================================
+            // عند موافقة المتبرع
+            // =================================================
+            if ($request->response === 'accepted') {
 
-        return response()->json(['success' => true]);
+                // إغلاق الطلب
+                $bloodRequest->update(['status' => 'completed']);
+                $this->logStatus($bloodRequest, 'approved', 'completed', Auth::id());
+
+                // رفض بقية المتبرعين
+                RequestUser::where('blood_request_id', $id)
+                    ->where('user_id', '!=', Auth::id())
+                    ->where('status', 'pending')
+                    ->update(['status' => 'unavailable']);
+
+                // 🔔 إشعار المستشفى (اسم + هاتف المتبرع)
+                $donor = Auth::user();
+                $hospitalUser = $bloodRequest->hospital->user;
+
+                $donorName = $donor->full_name ?? $donor->name;
+                $donorPhone = $donor->phone ?? 'غير متوفر';
+
+                Notification::create([
+                    'user_id' => $hospitalUser->id,
+                    'title' => '🩸 متبرع وافق على الطلب',
+                    'body' => "المتبرع {$donorName} وافق على التبرع.\nرقم الهاتف: {$donorPhone}",
+                    'type' => 'donor_accepted',
+                    'is_read' => false,
+                    'request_id' => $bloodRequest->id,
+                ]);
+
+                if ($hospitalUser->fcm_token) {
+                    FCMService::send(
+                        $hospitalUser->fcm_token,
+                        '🩸 متبرع وافق على الطلب',
+                        "{$donorName} وافق على التبرع – هاتف: {$donorPhone}",
+                        [
+                            'type' => 'donor_accepted',
+                            'request_id' => (string) $bloodRequest->id,
+                            'donor_id' => (string) $donor->id,
+                        ]
+                    );
+                }
+
+                // إشعار المريض
+                $this->notifyUser(
+                    User::find($bloodRequest->requester_id),
+                    'تم تأكيد التبرع ❤️',
+                    'تم العثور على متبرع مناسب، سيتم التواصل معه قريباً.',
+                    $bloodRequest
+                );
+            }
+
+            return response()->json(['success' => true]);
+        });
     }
 
     /* =====================================================
@@ -227,11 +286,11 @@ class BloodRequestController extends Controller
     private function notifyUser(User $user, string $title, string $body, ?BloodRequest $request = null)
     {
         Notification::create([
-            'user_id'    => $user->id,
-            'title'      => $title,
-            'body'       => $body,
-            'type'       => 'blood_request',
-            'is_read'    => false,
+            'user_id' => $user->id,
+            'title' => $title,
+            'body' => $body,
+            'type' => 'blood_request',
+            'is_read' => false,
             'request_id' => optional($request)->id,
         ]);
     }

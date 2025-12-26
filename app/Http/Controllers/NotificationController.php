@@ -5,45 +5,91 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Services\FCMService;
 use App\Models\User;
+use App\Models\BloodRequest;
+use App\Models\RequestUser;
 
 class NotificationController extends Controller
 {
     /**
-     * 📌 جلب إشعارات المستخدم
+     * 📌 جلب إشعارات المستخدم (مع حالة التفاعل)
      */
     public function index()
     {
         $user = auth()->user();
 
+        $notifications = $user->notifications()
+            ->latest()
+            ->get()
+            ->map(function ($notification) use ($user) {
+
+                $data = [
+                    'id' => $notification->id,
+                    'title' => $notification->title,
+                    'body' => $notification->body,
+                    'type' => $notification->type,
+                    'is_read' => (bool) $notification->is_read,
+                    'created_at' => $notification->created_at,
+                    'request_id' => $notification->request_id,
+                ];
+
+                // 👇 إذا الإشعار مرتبط بطلب دم
+                if ($notification->request_id) {
+
+                    $bloodRequest = BloodRequest::find($notification->request_id);
+
+                    $pivot = RequestUser::where('blood_request_id', $notification->request_id)
+                        ->where('user_id', $user->id)
+                        ->first();
+
+                    $requestStatus = $bloodRequest?->status;
+                    $myResponse = $pivot?->status;
+
+                    $isActionable = (
+                        in_array($requestStatus, ['approved'])
+                        && $myResponse === 'pending'
+                    );
+
+
+                    $data['request_status'] = $requestStatus;
+                    $data['my_response'] = $myResponse;
+                    $data['is_actionable'] = $isActionable;
+                }
+
+                return $data;
+            });
+
         return response()->json([
             'success' => true,
-            'notifications' => $user->notifications()->latest()->get()
+            'notifications' => $notifications
         ]);
     }
 
     /**
-     * 📌 تعليم الإشعارات كمقروءة
+     * 📌 تعليم إشعار كمقروء
+     * ⚠️ لا يؤثر على is_actionable
      */
-
     public function markRead($id)
-{
-    $user = auth()->user();
+    {
+        $user = auth()->user();
 
-    $notification = $user->notifications()
-        ->where('id', $id)
-        ->firstOrFail();
+        $notification = $user->notifications()
+            ->where('id', $id)
+            ->firstOrFail();
 
-    $notification->update([
-        'is_read' => 1,
-        'read_at' => now(),
-    ]);
+        $notification->update([
+            'is_read' => 1,
+            'read_at' => now(),
+        ]);
 
-    return response()->json([
-        'success' => true,
-        'message' => 'تم تعليم الإشعار كمقروء'
-    ]);
-}
+        return response()->json([
+            'success' => true,
+            'message' => 'تم تعليم الإشعار كمقروء'
+        ]);
+    }
 
+    /**
+     * 📌 تعليم جميع الإشعارات كمقروءة
+     */
     public function markAllRead()
     {
         $user = auth()->user();
@@ -68,8 +114,8 @@ class NotificationController extends Controller
     {
         $request->validate([
             'user_id' => 'required|exists:users,id',
-            'title'   => 'required|string',
-            'body'    => 'required|string',
+            'title' => 'required|string',
+            'body' => 'required|string',
         ]);
 
         $user = User::find($request->user_id);
@@ -81,7 +127,6 @@ class NotificationController extends Controller
             ], 404);
         }
 
-        // 🔥 إرسال الإشعار للجهاز
         $res = FCMService::send(
             $user->fcm_token,
             $request->title,
@@ -92,11 +137,10 @@ class NotificationController extends Controller
             ]
         );
 
-        // 💾 حفظ الإشعار في قاعدة البيانات
         $user->notifications()->create([
-            'title'   => $request->title,
-            'body'    => $request->body,
-            'type'    => 'single',
+            'title' => $request->title,
+            'body' => $request->body,
+            'type' => 'single',
             'is_read' => 0,
         ]);
 
@@ -114,14 +158,13 @@ class NotificationController extends Controller
     {
         $request->validate([
             'title' => 'required|string',
-            'body'  => 'required|string',
+            'body' => 'required|string',
         ]);
 
         $users = User::whereNotNull('fcm_token')->get();
 
         foreach ($users as $user) {
 
-            // إرسال الإشعار
             FCMService::send(
                 $user->fcm_token,
                 $request->title,
@@ -132,11 +175,10 @@ class NotificationController extends Controller
                 ]
             );
 
-            // حفظه بقاعدة البيانات
             $user->notifications()->create([
-                'title'   => $request->title,
-                'body'    => $request->body,
-                'type'    => 'broadcast',
+                'title' => $request->title,
+                'body' => $request->body,
+                'type' => 'broadcast',
                 'is_read' => 0,
             ]);
         }
@@ -148,7 +190,7 @@ class NotificationController extends Controller
     }
 
     /**
-     * 📌 حفظ FCM Token بعد تسجيل الدخول
+     * 📌 حفظ FCM Token
      */
     public function saveToken(Request $request)
     {
