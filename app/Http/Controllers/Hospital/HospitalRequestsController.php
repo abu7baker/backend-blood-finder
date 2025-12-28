@@ -7,6 +7,7 @@ use App\Models\BloodRequest;
 use App\Models\BloodStock;
 use App\Models\Notification;
 use App\Models\RequestStatusHistory;
+use App\Models\RequestUser;
 use App\Models\User;
 use App\Services\FCMService;
 use Illuminate\Http\Request;
@@ -163,29 +164,55 @@ class HospitalRequestsController extends Controller
 
     /* =====================================================
        🧑‍🦰 إشعار المتبرعين (DB + FCM)
+       ✅ إصلاح مهم: إنشاء RequestUser قبل إرسال الإشعار
     ===================================================== */
     private function notifyEligibleDonors(BloodRequest $request)
     {
-        $hospital = $request->hospital;
+        $hospital = $request->hospital; // علاقة hospital في BloodRequest
         $hospitalName = $hospital->name ?? 'المستشفى';
         $hospitalCity = $hospital->city ?? null;
 
         $donors = User::eligibleDonors()
             ->where('blood_type', $request->blood_type)
-            ->when($hospitalCity, fn($q) => $q->where('city', $hospitalCity))
+            ->when($hospitalCity, fn ($q) => $q->where('city', $hospitalCity))
             ->get();
 
+        logger('DONOR ALERT DEBUG', [
+            'request_id'    => $request->id,
+            'donors_count'  => $donors->count(),
+            'city'          => $hospitalCity,
+            'hospital_name' => $hospitalName,
+        ]);
+
         foreach ($donors as $donor) {
+
+            // ✅ منع تكرار نفس المتبرع لنفس الطلب
+            $existsPivot = RequestUser::where('blood_request_id', $request->id)
+                ->where('user_id', $donor->id)
+                ->exists();
+
+            if (!$existsPivot) {
+                RequestUser::create([
+                    'blood_request_id' => $request->id,
+                    'user_id'          => $donor->id,
+                    'role_in_request'  => 'donor',
+                    'status'           => 'pending',
+                ]);
+            }
+
+            // 🗂 حفظ الإشعار في DB
+            $body = "مستشفى {$hospitalName} يطلب دم لفصيلة {$request->blood_type} في مدينتك. هل تستطيع التبرع؟";
 
             Notification::create([
                 'user_id'    => $donor->id,
                 'title'      => '🩸 يوجد طلب تبرع بالدم',
-                'body'       => "مستشفى {$hospitalName} يطلب دم لفصيلة {$request->blood_type} في مدينتك. هل تستطيع التبرع؟",
+                'body'       => $body,
                 'type'       => 'blood_request_donor_alert',
                 'is_read'    => false,
                 'request_id' => $request->id,
             ]);
 
+            // 📲 Push Notification
             if ($donor->fcm_token) {
                 try {
                     FCMService::send(

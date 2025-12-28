@@ -14,55 +14,61 @@ class NotificationController extends Controller
      * 📌 جلب إشعارات المستخدم (مع حالة التفاعل)
      */
     public function index()
-    {
-        $user = auth()->user();
+{
+    $user = auth()->user();
 
-        $notifications = $user->notifications()
-            ->latest()
-            ->get()
-            ->map(function ($notification) use ($user) {
+    $notifications = $user->notifications()
+        ->latest()
+        ->get()
+        ->map(function ($notification) use ($user) {
 
-                $data = [
-                    'id' => $notification->id,
-                    'title' => $notification->title,
-                    'body' => $notification->body,
-                    'type' => $notification->type,
-                    'is_read' => (bool) $notification->is_read,
-                    'created_at' => $notification->created_at,
-                    'request_id' => $notification->request_id,
-                ];
+            $data = [
+                'id'         => $notification->id,
+                'title'      => $notification->title,
+                'body'       => $notification->body,
+                'type'       => $notification->type,
+                'is_read'    => (bool)$notification->is_read,
+                'created_at'=> $notification->created_at,
+                'request_id'=> $notification->request_id,
+            ];
 
-                // 👇 إذا الإشعار مرتبط بطلب دم
-                if ($notification->request_id) {
+            // ==============================
+            // 🩸 إشعار مرتبط بطلب دم
+            // ==============================
+            if ($notification->request_id) {
 
-                    $bloodRequest = BloodRequest::find($notification->request_id);
+                $bloodRequest = BloodRequest::find($notification->request_id);
 
-                    $pivot = RequestUser::where('blood_request_id', $notification->request_id)
-                        ->where('user_id', $user->id)
-                        ->first();
+                $pivot = RequestUser::where('blood_request_id', $notification->request_id)
+                    ->where('user_id', $user->id)
+                    ->first();
 
-                    $requestStatus = $bloodRequest?->status;
-                    $myResponse = $pivot?->status;
+                $requestStatus = $bloodRequest?->status;
+                $myResponse    = $pivot?->status;
 
-                    $isActionable = (
-                        in_array($requestStatus, ['approved'])
-                        && $myResponse === 'pending'
-                    );
+                // ✅ الشرط النهائي الصحيح
+                $isActionable = (
+                    $notification->type === 'blood_request_donor_alert'
+                    && $bloodRequest
+                    && $requestStatus === 'approved'
+                    && $pivot
+                    && $myResponse === 'pending'
+                );
 
+                $data['request_status'] = $requestStatus;
+                $data['my_response']    = $myResponse;
+                $data['is_actionable']  = $isActionable;
+            }
 
-                    $data['request_status'] = $requestStatus;
-                    $data['my_response'] = $myResponse;
-                    $data['is_actionable'] = $isActionable;
-                }
+            return $data;
+        });
 
-                return $data;
-            });
+    return response()->json([
+        'success'       => true,
+        'notifications' => $notifications
+    ]);
+}
 
-        return response()->json([
-            'success' => true,
-            'notifications' => $notifications
-        ]);
-    }
 
     /**
      * 📌 تعليم إشعار كمقروء
@@ -77,7 +83,7 @@ class NotificationController extends Controller
             ->firstOrFail();
 
         $notification->update([
-            'is_read' => 1,
+            'is_read' => true,
             'read_at' => now(),
         ]);
 
@@ -95,9 +101,9 @@ class NotificationController extends Controller
         $user = auth()->user();
 
         $user->notifications()
-            ->where('is_read', 0)
+            ->where('is_read', false)
             ->update([
-                'is_read' => 1,
+                'is_read' => true,
                 'read_at' => now(),
             ]);
 
@@ -114,8 +120,8 @@ class NotificationController extends Controller
     {
         $request->validate([
             'user_id' => 'required|exists:users,id',
-            'title' => 'required|string',
-            'body' => 'required|string',
+            'title'   => 'required|string',
+            'body'    => 'required|string',
         ]);
 
         $user = User::find($request->user_id);
@@ -132,16 +138,16 @@ class NotificationController extends Controller
             $request->title,
             $request->body,
             [
-                "type" => "single",
-                "user_id" => (string) $user->id,
+                'type'    => 'single',
+                'user_id' => (string) $user->id,
             ]
         );
 
         $user->notifications()->create([
-            'title' => $request->title,
-            'body' => $request->body,
-            'type' => 'single',
-            'is_read' => 0,
+            'title'   => $request->title,
+            'body'    => $request->body,
+            'type'    => 'single',
+            'is_read' => false,
         ]);
 
         return response()->json([
@@ -158,7 +164,7 @@ class NotificationController extends Controller
     {
         $request->validate([
             'title' => 'required|string',
-            'body' => 'required|string',
+            'body'  => 'required|string',
         ]);
 
         $users = User::whereNotNull('fcm_token')->get();
@@ -170,16 +176,16 @@ class NotificationController extends Controller
                 $request->title,
                 $request->body,
                 [
-                    "type" => "broadcast",
-                    "user_id" => (string) $user->id,
+                    'type'    => 'broadcast',
+                    'user_id' => (string) $user->id,
                 ]
             );
 
             $user->notifications()->create([
-                'title' => $request->title,
-                'body' => $request->body,
-                'type' => 'broadcast',
-                'is_read' => 0,
+                'title'   => $request->title,
+                'body'    => $request->body,
+                'type'    => 'broadcast',
+                'is_read' => false,
             ]);
         }
 

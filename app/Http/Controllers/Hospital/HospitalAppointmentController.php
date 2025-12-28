@@ -126,7 +126,7 @@ class HospitalAppointmentController extends Controller
 
             case 'completed':
                 $title = "شكراً لتبرعك ❤️";
-                $body  = "اكتملت عملية التبرع وتم إضافة الدم إلى مخزون المستشفى.";
+                $body  = "اكتملت عملية التبرع نشكر على تبرعك .";
                 break;
 
             default:

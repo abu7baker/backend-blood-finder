@@ -17,6 +17,7 @@ class Donation extends Model
         'units_donated',
         'donated_at',
         'status',
+        'source'
     ];
 
     protected $casts = [

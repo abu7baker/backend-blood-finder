@@ -34,7 +34,7 @@ Route::post('/resend-email-otp', [AuthController::class, 'resendEmailOtp']);
 Route::post('/google-login', [AuthController::class, 'googleLogin']);
 
 // =======================
-// 🏥 Hospitals (Public List)
+// 🏥 Hospitals (Public)
 // =======================
 Route::get('/hospitals', [HospitalController::class, 'index']);
 
@@ -71,20 +71,25 @@ Route::middleware('auth:sanctum')->group(function () {
     // =======================
     // 📅 Appointments
     // =======================
- Route::post('/appointments/create', [AppointmentController::class, 'store']);
+    Route::post('/appointments/create', [AppointmentController::class, 'store']);
 
     // =======================
-    // 🩸 Blood Requests (Users & Hospitals)
+    // 🩸 Blood Requests
     // =======================
 
-    // 🔹 المستخدم
-    Route::get('/blood-requests', [BloodRequestController::class, 'index']);        // طلباتي
-    Route::post('/blood-requests', [BloodRequestController::class, 'store']);       // إنشاء طلب
-    Route::get('/blood-requests/{id}', [BloodRequestController::class, 'show']);    // تفاصيل طلب
+    // 👤 المستخدم
+    Route::get('/blood-requests', [BloodRequestController::class, 'index']);              // طلباتي
+    Route::post('/blood-requests', [BloodRequestController::class, 'store']);             // إنشاء طلب
+    Route::get('/blood-requests/{id}', [BloodRequestController::class, 'show']);          // تفاصيل طلب
     Route::post('/blood-requests/{id}/cancel', [BloodRequestController::class, 'cancel']); // إلغاء
-    Route::post('/blood-requests/{id}/respond', [BloodRequestController::class, 'respondToRequest']); // رد المتبرع
 
-    // 🔹 المستشفى (قبول / رفض / إكمال)
+    // 🧑‍🦰 رد المتبرع (✔ هذا هو المسار الصحيح)
+    Route::post(
+        '/blood-requests/{id}/respond',
+        [BloodRequestController::class, 'respondToRequest']
+    );
+
+    // 🏥 المستشفى (تغيير حالة الطلب)
     Route::post(
         '/blood-requests/{id}/change-status',
         [BloodRequestController::class, 'changeStatus']

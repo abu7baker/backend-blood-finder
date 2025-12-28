@@ -133,14 +133,24 @@
                                     {{-- المستشفى --}}
                                     <td>{{ $d->hospital->name ?? '—' }}</td>
 
-                                    {{-- نوع التبرع --}}
-                                    <td>
-                                        @if($d->request_id)
-                                            <span class="badge bg-primary">عبر طلب (#{{ $d->request_id }})</span>
-                                        @else
-                                            <span class="badge bg-info text-dark">تبرع مباشر (موعد)</span>
-                                        @endif
-                                    </td>
+                              
+                                                {{-- نوع التبرع --}}
+                <td>
+                    @if($d->source === 'blood_request')
+                        <span class="badge bg-primary">
+                            عبر طلب دم (#{{ $d->request_id }})
+                        </span>
+                    @elseif($d->source === 'appointment')
+                        <span class="badge bg-info text-dark">
+                            تبرع مباشر (موعد)
+                        </span>
+                    @else
+                        <span class="badge bg-secondary">
+                            غير محدد
+                        </span>
+                    @endif
+                </td>
+
 
                                     {{-- الحالة --}}
                                     <td>
