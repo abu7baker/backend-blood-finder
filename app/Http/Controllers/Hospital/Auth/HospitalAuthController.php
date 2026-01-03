@@ -2,17 +2,19 @@
 
 namespace App\Http\Controllers\Hospital\Auth;
 
-
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Hospital;
+use App\Traits\LogsActivity;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
 
 class HospitalAuthController extends Controller
 {
+    use LogsActivity;
+
     /* ================================
         STEP 1 - عرض الصفحة
     =================================*/
@@ -35,7 +37,7 @@ class HospitalAuthController extends Controller
             "location" => "required|string|max:255",
         ]);
 
-        // حفظ البيانات في السيشن فقط
+        // حفظ البيانات في السيشن فقط (لا نسجل نشاط هنا)
         Session::put("hospital_register", [
             "name"     => $request->name,
             "email"    => $request->email,
@@ -75,16 +77,17 @@ class HospitalAuthController extends Controller
 
         // إنشاء المستخدم
         $user = User::create([
-            "full_name" => $data["name"],
-            "email"     => $data["email"],
-            "phone"     => $data["phone"],
-            "password"  => Hash::make($data["password"]),
-            "role_id"   => 2,          // مستشفى
-            "is_verified" => 0,        // قيد المراجعة
+            "full_name"   => $data["name"],
+            "email"       => $data["email"],
+            "phone"       => $data["phone"],
+            "password"    => Hash::make($data["password"]),
+            "role_id"     => 2, // مستشفى
+            "is_verified" => 0,
+            "status"      => 'active',
         ]);
 
         // إنشاء المستشفى
-        Hospital::create([
+        $hospital = Hospital::create([
             "user_id"  => $user->id,
             "name"     => $data["name"],
             "city"     => $data["city"],
@@ -92,61 +95,95 @@ class HospitalAuthController extends Controller
             "status"   => "pending",
         ]);
 
+        // ✅ سجل نشاط (حدث حقيقي)
+        $this->logActivity(
+            'create',
+            'تسجيل مستشفى جديد: ' . $hospital->name .
+            ' (المدينة: ' . $hospital->city . ')'
+        );
+
         // تنظيف السيشن
         Session::forget("hospital_register");
 
-        // توجيه لصفحة الحساب قيد المراجعة
         return redirect()->route("hospital.pending");
     }
 
     /* ================================
         صفحة الحساب قيد المراجعة
     =================================*/
-public function pending()
-{
-    $user = Auth::user();
-    
-    if (!$user) {
-        return redirect()->route('login');
+    public function pending()
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return redirect()->route('login');
+        }
+
+        $hospital = Hospital::where('user_id', $user->id)->first();
+
+        // ✅ سجل نشاط
+        $this->logActivity(
+            'view',
+            'دخول صفحة الحساب قيد المراجعة للمستشفى: ' . ($hospital->name ?? 'غير معروف')
+        );
+
+        return view('hospital.auth.pending', compact('user', 'hospital'));
     }
 
-    $hospital = Hospital::where('user_id', $user->id)->first();
-
-    return view('hospital.auth.pending', compact('user', 'hospital'));
-}
-
-
-
-
+    /* ================================
+        فحص حالة الحساب
+    =================================*/
     public function checkStatus(Request $request)
-{
-    $user = Auth::user();
+    {
+        $user = Auth::user();
 
-    if (!$user) {
-        return redirect()->route('login')->with('error', 'الرجاء تسجيل الدخول أولاً.');
+        if (!$user) {
+            return redirect()->route('login')
+                ->with('error', 'الرجاء تسجيل الدخول أولاً.');
+        }
+
+        $hospital = Hospital::where('user_id', $user->id)->first();
+
+        if (!$hospital) {
+            return back()->with('error', 'لم يتم العثور على حساب المستشفى.');
+        }
+
+        // إذا تم التفعيل
+        if ($hospital->status === 'verified') {
+
+            $this->logActivity(
+                'update',
+                'تم تفعيل حساب المستشفى: ' . $hospital->name
+            );
+
+            return redirect()->route('hospital.dashboard')
+                ->with('success', 'تم تفعيل حسابك! مرحباً بك.');
+        }
+
+        // ما زال قيد المراجعة
+        $this->logActivity(
+            'view',
+            'محاولة فحص حالة حساب المستشفى (قيد المراجعة): ' . $hospital->name
+        );
+
+        return back()->with('warning', 'ما زال حسابك قيد المراجعة. الرجاء المحاولة لاحقاً.');
     }
 
-    // جلب بيانات المستشفى المرتبطة بالمستخدم
-    $hospital = Hospital::where('user_id', $user->id)->first();
-
-    if (!$hospital) {
-        return back()->with('error', 'لم يتم العثور على حساب المستشفى.');
-    }
-
-    // التحقق من حالة الحساب
-    if ($hospital->status === 'verified') {
-        return redirect()->route('hospital.dashboard')
-                        ->with('success', 'تم تفعيل حسابك! مرحباً بك.');
-    }
-
-    return back()->with('warning', 'ما زال حسابك قيد المراجعة. الرجاء المحاولة لاحقاً.');
-}
- // تسجيل خروج
+    /* ================================
+        تسجيل خروج
+    =================================*/
     public function logout()
     {
+        $user = Auth::user();
+
+        if ($user) {
+            $this->logActivity(
+                'logout',
+                'تسجيل خروج المستشفى: ' . $user->full_name
+            );
+        }
+
         Auth::logout();
         return redirect()->route('login');
     }
-
-
 }

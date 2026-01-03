@@ -12,24 +12,23 @@ class RolesSeeder extends Seeder
         $roles = [
             [
                 'name' => 'admin',
-                'description' => 'System Administrator'
+                'description' => 'System Administrator with full access'
             ],
             [
                 'name' => 'hospital',
-                'description' => 'Hospital Staff Account'
+                'description' => 'Hospital account for managing blood requests and donations'
             ],
             [
-                'name' => 'donor',
-                'description' => 'User who donates blood'
+                'name' => 'user',
+                'description' => 'Regular user (Donor / Patient)'
             ],
-            [
-                'name' => 'patient',
-                'description' => 'User who requests blood'
-            ]
         ];
 
         foreach ($roles as $role) {
-            Role::firstOrCreate(['name' => $role['name']], $role);
+            Role::updateOrCreate(
+                ['name' => $role['name']],
+                ['description' => $role['description']]
+            );
         }
     }
 }

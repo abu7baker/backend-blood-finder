@@ -6,11 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Models\Appointment;
 use App\Models\BloodStock;
 use App\Models\Donation;
+use App\Traits\LogsActivity;
 use Illuminate\Http\Request;
 use App\Services\FCMService;
 
 class HospitalAppointmentController extends Controller
 {
+    use LogsActivity;
+
     /**
      * عرض جميع مواعيد المستشفى
      */
@@ -20,9 +23,15 @@ class HospitalAppointmentController extends Controller
 
         $appointments = Appointment::with('donor')
             ->where('hospital_id', $hospitalId)
-            ->when($request->status, fn($q) => $q->where('status', $request->status))
+            ->when($request->status, fn ($q) => $q->where('status', $request->status))
             ->orderBy('date_time', 'ASC')
             ->get();
+
+        // 📝 سجل نشاط
+        $this->logActivity(
+            'view',
+            'عرض مواعيد التبرع الخاصة بالمستشفى'
+        );
 
         return view('hospital.appointments.index', compact('appointments'));
     }
@@ -55,16 +64,27 @@ class HospitalAppointmentController extends Controller
         ]);
 
         $appointment = Appointment::with(['donor', 'hospital'])->findOrFail($request->id);
-        $donor    = $appointment->donor;
-        $hospital = $appointment->hospital;
+        $donor       = $appointment->donor;
+        $hospital    = $appointment->hospital;
+
+        $oldStatus = $appointment->status;
 
         // تحديث حالة الموعد
-        $appointment->update(['status' => $request->status]);
+        $appointment->update([
+            'status' => $request->status
+        ]);
+
+        // 📝 سجل تغيير الحالة
+        $this->logActivity(
+            'update',
+            'تغيير حالة موعد تبرع للمتبرع: ' . $donor->full_name .
+            ' (' . $oldStatus . ' → ' . $request->status . ')'
+        );
 
         /*
-        |--------------------------------------------------------------------------
-        | 1) عند اكتمال الموعد → تحديث المخزون + تسجيل التبرع
-        |--------------------------------------------------------------------------
+        |------------------------------------------------------------
+        | عند اكتمال الموعد → تحديث المخزون + تسجيل التبرع
+        |------------------------------------------------------------
         */
         if ($request->status === 'completed') {
 
@@ -72,7 +92,6 @@ class HospitalAppointmentController extends Controller
 
             if ($bloodType) {
 
-                // تحديث أو إنشاء سجل المخزون
                 $stock = BloodStock::firstOrCreate(
                     [
                         'hospital_id' => $hospital->id,
@@ -83,78 +102,75 @@ class HospitalAppointmentController extends Controller
                     ]
                 );
 
-                // إضافة وحدة دم واحدة
-                $stock->units_available += 1;
-                $stock->save();
+                $stock->increment('units_available');
 
-                // ----------------------------
-                // تسجيل التبرع في جدول donations
-                // ----------------------------
                 Donation::create([
                     'donor_id'      => $donor->id,
                     'hospital_id'   => $hospital->id,
-                    'request_id'    => null, // لأنه تبرع مباشر
+                    'request_id'    => null,
                     'blood_type'    => $bloodType,
                     'units_donated' => 1,
                     'donated_at'    => now(),
                     'status'        => 'completed',
                 ]);
+
+                // 📝 سجل نشاط إضافي
+                $this->logActivity(
+                    'create',
+                    'اكتمال موعد تبرع وإضافة وحدة دم (' . $bloodType . ')'
+                );
             }
         }
 
         /*
-        |--------------------------------------------------------------------------
-        | 2) إرسال إشعار FCM للمتبرع
-        |--------------------------------------------------------------------------
+        |------------------------------------------------------------
+        | إرسال إشعار FCM للمتبرع
+        |------------------------------------------------------------
         */
-        if (!$donor->fcm_token) {
-            return back()->with('error', '⚠ المستخدم لا يملك FCM Token');
+        if ($donor->fcm_token) {
+
+            switch ($request->status) {
+                case 'approved':
+                    $title = 'تم قبول الموعد';
+                    $body  = 'تمت الموافقة على موعد التبرع الخاص بك ❤️';
+                    break;
+
+                case 'cancelled':
+                    $title = 'تم إلغاء الموعد';
+                    $body  = 'نأسف، تم إلغاء موعدك من قبل المستشفى.';
+                    break;
+
+                case 'completed':
+                    $title = 'شكراً لتبرعك ❤️';
+                    $body  = 'اكتملت عملية التبرع، نشكرك على إنقاذ الأرواح.';
+                    break;
+
+                default:
+                    $title = 'تحديث موعد التبرع';
+                    $body  = 'تم تحديث حالة الموعد.';
+            }
+
+            FCMService::send(
+                $donor->fcm_token,
+                $title,
+                $body,
+                [
+                    'appointment_id' => (string) $appointment->id,
+                    'type'           => $request->status,
+                ]
+            );
+
+            $donor->notifications()->create([
+                'title'   => $title,
+                'body'    => $body,
+                'type'    => $request->status,
+                'is_read' => 0,
+            ]);
         }
 
-        $type = $request->status;
-
-        switch ($type) {
-            case 'approved':
-                $title = "تم قبول الموعد";
-                $body  = "تمت الموافقة على موعد التبرع الخاص بك ❤️";
-                break;
-
-            case 'cancelled':
-                $title = "تم إلغاء الموعد";
-                $body  = "نأسف، تم إلغاء موعدك من قبل المستشفى.";
-                break;
-
-            case 'completed':
-                $title = "شكراً لتبرعك ❤️";
-                $body  = "اكتملت عملية التبرع نشكر على تبرعك .";
-                break;
-
-            default:
-                $title = "تحديث موعد التبرع";
-                $body  = "تم تحديث حالة الموعد.";
-        }
-
-        // إرسال الإشعار
-        FCMService::send(
-            $donor->fcm_token,
-            $title,
-            $body,
-            [
-                "appointment_id" => (string)$appointment->id,
-                "type"           => $type,
-            ]
+        return back()->with(
+            'success',
+            'تم تحديث حالة الموعد وإضافة التبرع وتحديث المخزون بنجاح 🎉'
         );
-
-        // حفظ الإشعار في قاعدة البيانات
-        $donor->notifications()->create([
-            'title'   => $title,
-            'body'    => $body,
-            'type'    => $type,
-            'is_read' => 0,
-        ]);
-
-        return redirect()
-            ->back()
-            ->with('success', 'تم تحديث حالة الموعد وإضافة التبرع وتحديث المخزون بنجاح 🎉');
     }
 }

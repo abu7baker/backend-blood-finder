@@ -99,7 +99,7 @@
                 <span>التقارير والإحصائيات</span>
             </a>
 
-            <a href="#" class="sidebar-item">
+            <a href="{{ route('admin.security.index') }}" class="sidebar-item">
                 <i class="fas fa-shield-halved"></i>
                 <span>الأمان والصلاحيات</span>
             </a>

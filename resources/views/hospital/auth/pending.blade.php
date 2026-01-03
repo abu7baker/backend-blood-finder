@@ -60,9 +60,9 @@
 
      <form action="{{ route('logout') }}" method="POST">
         @csrf
-        <button type="submit" class="btn btn-primary">
-            تحديث الحالة <i class="bi bi-arrow-repeat ms-1"></i>
-        </button>
+       
+            <button type="submit" class="btn btn-primary btn-login">تسجيل الدخول</button>
+      
     </form>
     </div>
 

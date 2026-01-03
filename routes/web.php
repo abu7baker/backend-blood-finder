@@ -26,6 +26,8 @@ use App\Http\Controllers\Admin\HospitalController;
 use App\Http\Controllers\Admin\BloodStockController;
 use App\Http\Controllers\Admin\BloodRequestController;
 use App\Http\Controllers\Admin\DonationController;
+use App\Http\Controllers\Admin\SecurityController;
+use App\Http\Controllers\Admin\RoleController;
 
 
 /*
@@ -131,6 +133,11 @@ Route::middleware(['auth'])
         Route::get('/donations/{id}', [DonationController::class, 'show'])->name('donations.show');
         Route::post('/donations/{id}/status', [DonationController::class, 'updateStatus'])->name('donations.status');
         Route::delete('/donations/{id}', [DonationController::class, 'destroy'])->name('donations.destroy');
+          Route::get('/security', [SecurityController::class, 'index'])->name('security.index');
+
+
+         Route::put('roles/{id}', [RoleController::class, 'update'])->name('roles.update');
+    Route::delete('roles/{id}', [RoleController::class, 'destroy'])->name('roles.destroy');
     });
 
 /*
@@ -166,7 +173,9 @@ Route::prefix('hospital')
         Route::middleware('auth')->group(function () {
 
             // Dashboard
-            Route::get('/dashboard', [HospitalDashboardController::class, 'index'])->name('dashboard');
+            Route::get('/dashboard', function () {
+                return view('hospital.dashboard');
+            })->name('dashboard');
 
             /*
             |--------------------------------------------------------------------------

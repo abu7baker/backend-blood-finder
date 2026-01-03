@@ -11,14 +11,12 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        // الحصول على IDs للأدوار
-        $adminRole     = Role::where('name', 'admin')->first()->id;
-        $hospitalRole  = Role::where('name', 'hospital')->first()->id;
-        $donorRole     = Role::where('name', 'donor')->first()->id;
-        $patientRole   = Role::where('name', 'patient')->first()->id;
+        $adminRole    = Role::where('name', 'admin')->first()->id;
+        $hospitalRole = Role::where('name', 'hospital')->first()->id;
+        $userRole     = Role::where('name', 'user')->first()->id;
 
-        // ---- 1. Admin account ----
-        User::firstOrCreate(
+        // 1️⃣ Admin Account
+        User::updateOrCreate(
             ['email' => 'admin@bloodfinder.com'],
             [
                 'full_name'            => 'System Admin',
@@ -28,12 +26,14 @@ class UserSeeder extends Seeder
                 'city'                 => 'Sana\'a',
                 'blood_type'           => 'O+',
                 'donation_eligibility' => 'eligible',
-                'role_id'              => $adminRole
+                'role_id'              => $adminRole,
+                'is_verified'          => 1,
+                'status'               => 'active',
             ]
         );
 
-        // ---- 2. Hospital Staff account ----
-        User::firstOrCreate(
+        // 2️⃣ Hospital Staff Account
+        User::updateOrCreate(
             ['email' => 'hospital@bloodfinder.com'],
             [
                 'full_name'            => 'Hospital Staff',
@@ -43,12 +43,14 @@ class UserSeeder extends Seeder
                 'city'                 => 'Sana\'a',
                 'blood_type'           => 'A+',
                 'donation_eligibility' => 'eligible',
-                'role_id'              => $hospitalRole
+                'role_id'              => $hospitalRole,
+                'is_verified'          => 1,
+                'status'               => 'active',
             ]
         );
 
-        // ---- 3. Donor account ----
-        User::firstOrCreate(
+        // 3️⃣ Donor Account (User Role)
+        User::updateOrCreate(
             ['email' => 'donor@bloodfinder.com'],
             [
                 'full_name'            => 'Regular Donor',
@@ -59,12 +61,14 @@ class UserSeeder extends Seeder
                 'blood_type'           => 'B+',
                 'last_donation_date'   => now()->subMonths(4),
                 'donation_eligibility' => 'eligible',
-                'role_id'              => $donorRole
+                'role_id'              => $userRole,
+                'is_verified'          => 1,
+                'status'               => 'active',
             ]
         );
 
-        // ---- 4. Patient account ----
-        User::firstOrCreate(
+        // 4️⃣ Patient Account (User Role)
+        User::updateOrCreate(
             ['email' => 'patient@bloodfinder.com'],
             [
                 'full_name'            => 'Test Patient',
@@ -74,7 +78,9 @@ class UserSeeder extends Seeder
                 'city'                 => 'Ibb',
                 'blood_type'           => 'O-',
                 'donation_eligibility' => 'not_eligible',
-                'role_id'              => $patientRole
+                'role_id'              => $userRole,
+                'is_verified'          => 1,
+                'status'               => 'active',
             ]
         );
     }

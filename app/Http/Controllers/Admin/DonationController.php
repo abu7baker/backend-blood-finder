@@ -5,11 +5,14 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Donation;
 use App\Models\BloodRequest;
+use App\Traits\LogsActivity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class DonationController extends Controller
 {
+    use LogsActivity;
+
     /**
      * 📌 عرض التبرعات + الإحصائيات (أدمن + مستشفى)
      */
@@ -30,6 +33,11 @@ class DonationController extends Controller
                 ->latest()
                 ->get();
 
+            $this->logActivity(
+                'view',
+                'عرض قائمة جميع التبرعات'
+            );
+
         } else {
 
             // المستشفى يشوف فقط تبرعاته
@@ -39,6 +47,11 @@ class DonationController extends Controller
                 ->where('hospital_id', $hospital->id)
                 ->latest()
                 ->get();
+
+            $this->logActivity(
+                'view',
+                'عرض قائمة التبرعات الخاصة بالمستشفى: ' . $hospital->name
+            );
         }
 
         return view('admin.donations.index', compact('donations', 'stats'));
@@ -51,6 +64,11 @@ class DonationController extends Controller
     {
         $donation = Donation::with(['donor', 'hospital', 'request'])
             ->findOrFail($id);
+
+        $this->logActivity(
+            'view',
+            'عرض تفاصيل التبرع رقم #' . $donation->id
+        );
 
         return view('admin.donations.show', compact('donation'));
     }
@@ -65,7 +83,11 @@ class DonationController extends Controller
             'units_donated' => 'nullable|integer|min:1',
         ]);
 
-        $donation = Donation::findOrFail($id);
+        $donation = Donation::with(['donor', 'hospital'])->findOrFail($id);
+
+        // القيم القديمة
+        $oldStatus = $donation->status;
+        $oldUnits  = $donation->units_donated;
 
         // تحديث الحالة
         $donation->status = $request->status;
@@ -77,6 +99,25 @@ class DonationController extends Controller
 
         $donation->save();
 
+        // 🧠 تحديد التغييرات
+        $changes = [];
+
+        if ($oldStatus !== $donation->status) {
+            $changes[] = 'الحالة: ' . $oldStatus . ' → ' . $donation->status;
+        }
+
+        if ($oldUnits !== $donation->units_donated) {
+            $changes[] = 'عدد الوحدات: ' . ($oldUnits ?? 0) . ' → ' . $donation->units_donated;
+        }
+
+        if (!empty($changes)) {
+            $this->logActivity(
+                'update',
+                'تحديث حالة التبرع رقم #' . $donation->id . '<br>' .
+                implode('<br>', $changes)
+            );
+        }
+
         return back()->with('success', 'تم تحديث حالة التبرع بنجاح ✔');
     }
 
@@ -85,9 +126,9 @@ class DonationController extends Controller
      */
     public function acceptDonation(Request $request, $requestId)
     {
-        $req = BloodRequest::findOrFail($requestId);
+        $req = BloodRequest::with('hospital')->findOrFail($requestId);
 
-        Donation::create([
+        $donation = Donation::create([
             'donor_id'      => Auth::id(),
             'hospital_id'   => $req->hospital_id,
             'request_id'    => $req->id,
@@ -96,6 +137,12 @@ class DonationController extends Controller
             'units_donated' => 1,
             'accepted_at'   => now(),
         ]);
+
+        $this->logActivity(
+            'create',
+            'موافقة متبرع على طلب دم رقم #' . $req->id .
+            ' (المستشفى: ' . $req->hospital->name . ')'
+        );
 
         return response()->json([
             'success' => true,
@@ -108,7 +155,14 @@ class DonationController extends Controller
      */
     public function destroy($id)
     {
-        $donation = Donation::findOrFail($id);
+        $donation = Donation::with(['donor'])->findOrFail($id);
+
+        $this->logActivity(
+            'delete',
+            'حذف التبرع رقم #' . $donation->id .
+            ' (المتبرع: ' . ($donation->donor->full_name ?? 'غير معروف') . ')'
+        );
+
         $donation->delete();
 
         return back()->with('success', 'تم حذف التبرع بنجاح');

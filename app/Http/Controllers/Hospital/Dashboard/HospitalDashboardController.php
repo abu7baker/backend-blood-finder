@@ -1,36 +1,68 @@
 <?php
 
-namespace App\Http\Controllers\Hospital\Dashboard;
+namespace App\Http\Controllers\Hospital;
 
 use App\Http\Controllers\Controller;
+use App\Models\BloodRequest;
+use App\Models\Donation;
+use App\Models\BloodStock;
 use App\Models\Hospital;
+use App\Traits\LogsActivity;
 use Illuminate\Support\Facades\Auth;
 
 class HospitalDashboardController extends Controller
 {
+    use LogsActivity;
+
+    /**
+     * عرض لوحة تحكم المستشفى
+     */
     public function index()
     {
         $user = Auth::user();
 
-        // نجيب المستشفى المرتبط بهذا المستخدم
-        $hospital = Hospital::where('user_id', $user->id)->first();
-
-        if (! $hospital) {
-            // لو حصل خلل ومافيش Hospital لهذا المستخدم
-            return redirect()->route('login')->with('error', 'حسابك غير مرتبط بأي مستشفى.');
+        // حماية
+        if (!$user || !$user->hospital) {
+            return redirect()->route('login')
+                ->with('error', 'لا يمكنك الوصول إلى لوحة التحكم.');
         }
 
-        $requests_count      = $hospital->bloodRequests()->count();
-        $stock_count         = $hospital->bloodStock()->sum('units_available'); // أو ->count()
-        $appointments_count  = $hospital->appointments()->count();
-        $notifications_count = $user->notifications()->whereNull('read_at')->count();
+        $hospital = $user->hospital;
+
+        /* =========================
+            الإحصائيات
+        ========================== */
+
+        $stats = [
+            // طلبات الدم
+            'total_requests' => BloodRequest::where('hospital_id', $hospital->id)->count(),
+            'pending_requests' => BloodRequest::where('hospital_id', $hospital->id)
+                ->where('status', 'pending')->count(),
+            'completed_requests' => BloodRequest::where('hospital_id', $hospital->id)
+                ->where('status', 'completed')->count(),
+
+            // التبرعات
+            'total_donations' => Donation::where('hospital_id', $hospital->id)->count(),
+            'completed_donations' => Donation::where('hospital_id', $hospital->id)
+                ->where('status', 'completed')->count(),
+
+            // المخزون
+            'total_units' => BloodStock::where('hospital_id', $hospital->id)
+                ->sum('units_available'),
+        ];
+
+        /* =========================
+            سجل نشاط
+        ========================== */
+
+        $this->logActivity(
+            'view',
+            'دخول لوحة تحكم المستشفى: ' . $hospital->name
+        );
 
         return view('hospital.dashboard.index', compact(
             'hospital',
-            'requests_count',
-            'stock_count',
-            'appointments_count',
-            'notifications_count'
+            'stats'
         ));
     }
 }

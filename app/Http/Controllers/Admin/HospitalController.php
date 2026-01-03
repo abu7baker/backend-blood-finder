@@ -5,11 +5,14 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Hospital;
 use App\Models\User;
+use App\Traits\LogsActivity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
 class HospitalController extends Controller
 {
+    use LogsActivity;
+
     /**
      * عرض قائمة المستشفيات مع الإحصائيات
      */
@@ -23,6 +26,12 @@ class HospitalController extends Controller
             ->when($status && $status !== 'all', fn ($q) => $q->where('status', $status))
             ->latest()
             ->get();
+
+        // 📝 سجل نشاط
+        $this->logActivity(
+            'view',
+            'عرض قائمة المستشفيات'
+        );
 
         return view('admin.hospitals.index', [
             'hospitals' => $hospitals,
@@ -39,6 +48,13 @@ class HospitalController extends Controller
     public function json($id)
     {
         $hospital = Hospital::with('user')->findOrFail($id);
+
+        // 📝 سجل نشاط
+        $this->logActivity(
+            'view',
+            'عرض بيانات المستشفى: ' . $hospital->name
+        );
+
         return response()->json($hospital);
     }
 
@@ -56,26 +72,33 @@ class HospitalController extends Controller
             'status'        => 'required|in:verified,pending,blocked',
         ]);
 
-        // 1) إنشاء مستخدم للمستشفى
+        // إنشاء مستخدم المستشفى
         $user = User::create([
             'full_name'            => $request->hospital_name . ' - إدارة المستشفى',
             'email'                => $request->email,
             'phone'                => $request->phone,
             'city'                 => $request->city,
             'password'             => Hash::make('123456'),
-            'role_id'              => 2, // hospital
+            'role_id'              => 2,
             'donation_eligibility' => 'not_eligible',
             'status'               => 'active',
         ]);
 
-        // 2) إنشاء المستشفى وربطه بالمستخدم
-        Hospital::create([
+        // إنشاء المستشفى
+        $hospital = Hospital::create([
             'user_id'  => $user->id,
             'name'     => $request->hospital_name,
             'city'     => $request->city,
             'location' => $request->location,
             'status'   => $request->status,
         ]);
+
+        // 📝 سجل نشاط
+        $this->logActivity(
+            'create',
+            'إضافة مستشفى جديد: ' . $hospital->name .
+            ' (الحالة: ' . $this->hospitalStatusLabel($hospital->status) . ')'
+        );
 
         return back()->with('success', 'تم إضافة المستشفى بنجاح ✔️');
     }
@@ -87,6 +110,12 @@ class HospitalController extends Controller
     {
         $hospital = Hospital::with('user')->findOrFail($id);
 
+        // القيم القديمة
+        $oldPhone  = $hospital->user->phone;
+        $oldEmail  = $hospital->user->email;
+        $oldCity   = $hospital->city;
+        $oldStatus = $hospital->status;
+
         $request->validate([
             'hospital_name' => 'required|min:3',
             'city'          => 'required',
@@ -96,7 +125,7 @@ class HospitalController extends Controller
             'status'        => 'required|in:verified,pending,blocked',
         ]);
 
-        // تحديث حساب المستخدم
+        // تحديث المستخدم
         $hospital->user->update([
             'full_name' => $request->hospital_name . ' - إدارة المستشفى',
             'email'     => $request->email,
@@ -104,7 +133,7 @@ class HospitalController extends Controller
             'city'      => $request->city,
         ]);
 
-        // تحديث بيانات المستشفى
+        // تحديث المستشفى
         $hospital->update([
             'name'     => $request->hospital_name,
             'city'     => $request->city,
@@ -112,21 +141,58 @@ class HospitalController extends Controller
             'status'   => $request->status,
         ]);
 
+        // 🧠 تحديد التغييرات
+        $changes = [];
+
+        if ($oldPhone !== $hospital->user->phone) {
+            $changes[] = 'رقم الهاتف: ' . $oldPhone . ' → ' . $hospital->user->phone;
+        }
+
+        if ($oldEmail !== $hospital->user->email) {
+            $changes[] = 'البريد الإلكتروني: ' . $oldEmail . ' → ' . $hospital->user->email;
+        }
+
+        if ($oldCity !== $hospital->city) {
+            $changes[] = 'المدينة: ' . $oldCity . ' → ' . $hospital->city;
+        }
+
+        if ($oldStatus !== $hospital->status) {
+            $changes[] = 'الحالة: ' .
+                $this->hospitalStatusLabel($oldStatus) .
+                ' → ' .
+                $this->hospitalStatusLabel($hospital->status);
+        }
+
+        if (!empty($changes)) {
+            $this->logActivity(
+                'update',
+                'تحديث بيانات المستشفى: ' . $hospital->name . '<br>' .
+                implode('<br>', $changes)
+            );
+        }
+
         return back()->with('success', 'تم تحديث بيانات المستشفى بنجاح ✔️');
     }
 
     /**
-     * حذف المستشفى + حذف المستخدم المرتبط
+     * حذف المستشفى + المستخدم المرتبط
      */
     public function destroy($id)
     {
         $hospital = Hospital::with('user')->findOrFail($id);
+        $hospitalName = $hospital->name;
 
-        // حذف المستشفى ثم المستخدم
         $hospital->delete();
+
         if ($hospital->user) {
             $hospital->user->delete();
         }
+
+        // 📝 سجل نشاط
+        $this->logActivity(
+            'delete',
+            'حذف المستشفى: ' . $hospitalName
+        );
 
         return back()->with('success', 'تم حذف المستشفى بنجاح ✔️');
     }

@@ -11,20 +11,23 @@ use App\Models\RequestUser;
 use App\Models\User;
 use App\Services\FCMService;
 use Illuminate\Http\Request;
+use App\Traits\LogsActivity;
+
 
 class HospitalRequestsController extends Controller
 {
+    use LogsActivity;
     /* =====================================================
        رسائل واجهة المستشفى (احترافية وموحّدة)
     ===================================================== */
     private array $uiMessages = [
-        'request_created'   => 'تم إرسال طلب الدم بنجاح.',
-        'request_updated'   => 'تم تحديث حالة الطلب بنجاح.',
+        'request_created' => 'تم إرسال طلب الدم بنجاح.',
+        'request_updated' => 'تم تحديث حالة الطلب بنجاح.',
         'request_no_change' => 'لم يتم تغيير حالة الطلب.',
         'request_completed' => 'تم إغلاق الطلب بعد توفير الدم.',
-        'request_rejected'  => 'تم رفض طلب الدم.',
-        'patient_saved'     => 'تم حفظ بيانات المريض بنجاح.',
-        'stock_available'   => 'هذه الفصيلة متوفرة حالياً في مخزون المستشفى.',
+        'request_rejected' => 'تم رفض طلب الدم.',
+        'patient_saved' => 'تم حفظ بيانات المريض بنجاح.',
+        'stock_available' => 'هذه الفصيلة متوفرة حالياً في مخزون المستشفى.',
     ];
 
     /* =====================================================
@@ -105,19 +108,19 @@ class HospitalRequestsController extends Controller
         $messages = [
             'approved' => [
                 'title' => 'تمت الموافقة على طلب الدم 🩸',
-                'body'  => "تمت الموافقة على طلبك من {$hospitalName} وسيتم إشعار المتبرعين المناسبين.",
+                'body' => "تمت الموافقة على طلبك من {$hospitalName} وسيتم إشعار المتبرعين المناسبين.",
             ],
             'rejected' => [
                 'title' => 'تعذر توفير الدم ❌',
-                'body'  => "نعتذر، {$hospitalName} لم يتمكن من توفير الدم في الوقت الحالي.",
+                'body' => "نعتذر، {$hospitalName} لم يتمكن من توفير الدم في الوقت الحالي.",
             ],
             'completed' => [
                 'title' => 'تم توفير الدم ❤️',
-                'body'  => "تم توفير وحدات الدم المطلوبة من {$hospitalName}. نسأل الله لك الشفاء.",
+                'body' => "تم توفير وحدات الدم المطلوبة من {$hospitalName}. نسأل الله لك الشفاء.",
             ],
             'pending' => [
                 'title' => 'طلب الدم قيد المراجعة',
-                'body'  => "طلبك قيد المراجعة حالياً من قبل {$hospitalName}.",
+                'body' => "طلبك قيد المراجعة حالياً من قبل {$hospitalName}.",
             ],
         ];
 
@@ -125,11 +128,11 @@ class HospitalRequestsController extends Controller
 
         /* ========= إشعار صاحب الطلب ========= */
         Notification::create([
-            'user_id'    => $bloodRequest->requester_id,
-            'title'      => $msg['title'],
-            'body'       => $msg['body'],
-            'type'       => 'blood_request',
-            'is_read'    => false,
+            'user_id' => $bloodRequest->requester_id,
+            'title' => $msg['title'],
+            'body' => $msg['body'],
+            'type' => 'blood_request',
+            'is_read' => false,
             'request_id' => $bloodRequest->id,
         ]);
 
@@ -140,9 +143,9 @@ class HospitalRequestsController extends Controller
                     $msg['title'],
                     $msg['body'],
                     [
-                        'type'       => 'blood_request',
+                        'type' => 'blood_request',
                         'request_id' => (string) $bloodRequest->id,
-                        'status'     => $request->status,
+                        'status' => $request->status,
                     ]
                 );
             } catch (\Throwable $e) {
@@ -174,13 +177,13 @@ class HospitalRequestsController extends Controller
 
         $donors = User::eligibleDonors()
             ->where('blood_type', $request->blood_type)
-            ->when($hospitalCity, fn ($q) => $q->where('city', $hospitalCity))
+            ->when($hospitalCity, fn($q) => $q->where('city', $hospitalCity))
             ->get();
 
         logger('DONOR ALERT DEBUG', [
-            'request_id'    => $request->id,
-            'donors_count'  => $donors->count(),
-            'city'          => $hospitalCity,
+            'request_id' => $request->id,
+            'donors_count' => $donors->count(),
+            'city' => $hospitalCity,
             'hospital_name' => $hospitalName,
         ]);
 
@@ -194,9 +197,9 @@ class HospitalRequestsController extends Controller
             if (!$existsPivot) {
                 RequestUser::create([
                     'blood_request_id' => $request->id,
-                    'user_id'          => $donor->id,
-                    'role_in_request'  => 'donor',
-                    'status'           => 'pending',
+                    'user_id' => $donor->id,
+                    'role_in_request' => 'donor',
+                    'status' => 'pending',
                 ]);
             }
 
@@ -204,11 +207,11 @@ class HospitalRequestsController extends Controller
             $body = "مستشفى {$hospitalName} يطلب دم لفصيلة {$request->blood_type} في مدينتك. هل تستطيع التبرع؟";
 
             Notification::create([
-                'user_id'    => $donor->id,
-                'title'      => '🩸 يوجد طلب تبرع بالدم',
-                'body'       => $body,
-                'type'       => 'blood_request_donor_alert',
-                'is_read'    => false,
+                'user_id' => $donor->id,
+                'title' => '🩸 يوجد طلب تبرع بالدم',
+                'body' => $body,
+                'type' => 'blood_request_donor_alert',
+                'is_read' => false,
                 'request_id' => $request->id,
             ]);
 
@@ -220,11 +223,11 @@ class HospitalRequestsController extends Controller
                         '🩸 طلب تبرع بالدم',
                         "مستشفى {$hospitalName} يحتاج دم {$request->blood_type}",
                         [
-                            'type'       => 'donor_alert',
+                            'type' => 'donor_alert',
                             'request_id' => (string) $request->id,
-                            'status'     => 'approved',
+                            'status' => 'approved',
                             'blood_type' => $request->blood_type,
-                            'city'       => $hospitalCity,
+                            'city' => $hospitalCity,
                         ]
                     );
                 } catch (\Throwable $e) {
@@ -246,17 +249,17 @@ class HospitalRequestsController extends Controller
             $user = $bloodRequest->requester;
 
             $bloodRequest->update([
-                'patient_name'   => $user->full_name,
-                'patient_age'    => $user->age,
+                'patient_name' => $user->full_name,
+                'patient_age' => $user->age,
                 'patient_gender' => $user->gender,
             ]);
         } else {
             $request->validate([
-                'patient_name'   => 'required|string|max:255',
-                'patient_age'    => 'required|integer|min:0',
+                'patient_name' => 'required|string|max:255',
+                'patient_age' => 'required|integer|min:0',
                 'patient_gender' => 'required|in:male,female,M,F',
-                'doctor_name'    => 'nullable|string|max:255',
-                'diagnosis'      => 'nullable|string|max:255',
+                'doctor_name' => 'nullable|string|max:255',
+                'diagnosis' => 'nullable|string|max:255',
             ]);
 
             $bloodRequest->update($request->only([
@@ -279,18 +282,19 @@ class HospitalRequestsController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'patient_name'     => 'required|string|max:255',
-            'patient_age'      => 'required|integer|min:1',
-            'patient_gender'   => 'required|in:M,F,male,female',
-            'blood_type'       => 'required|in:O+,O-,A+,A-,B+,B-,AB+,AB-',
-            'units_requested'  => 'required|integer|min:1',
-            'priority'         => 'required|in:normal,urgent,critical',
-            'diagnosis'        => 'nullable|string|max:255',
-            'notes'            => 'nullable|string',
+            'patient_name' => 'required|string|max:255',
+            'patient_age' => 'required|integer|min:1',
+            'patient_gender' => 'required|in:M,F,male,female',
+            'blood_type' => 'required|in:O+,O-,A+,A-,B+,B-,AB+,AB-',
+            'units_requested' => 'required|integer|min:1',
+            'priority' => 'required|in:normal,urgent,critical',
+            'diagnosis' => 'nullable|string|max:255',
+            'notes' => 'nullable|string',
         ]);
 
         $hospital = auth()->user()->hospital;
-        if (!$hospital) abort(403);
+        if (!$hospital)
+            abort(403);
 
         $stock = BloodStock::where('hospital_id', $hospital->id)
             ->where('blood_type', $request->blood_type)
@@ -299,9 +303,9 @@ class HospitalRequestsController extends Controller
         if ($stock && $stock->units_available >= $request->units_requested) {
             Notification::create([
                 'user_id' => $hospital->user_id,
-                'title'   => 'تنبيه مخزون الدم',
-                'body'    => "المخزون يحتوي على {$stock->units_available} وحدة من فصيلة {$request->blood_type}.",
-                'type'    => 'stock_alert',
+                'title' => 'تنبيه مخزون الدم',
+                'body' => "المخزون يحتوي على {$stock->units_available} وحدة من فصيلة {$request->blood_type}.",
+                'type' => 'stock_alert',
             ]);
 
             return redirect()->back()
@@ -309,18 +313,24 @@ class HospitalRequestsController extends Controller
         }
 
         BloodRequest::create([
-            'requester_id'    => auth()->id(),
-            'hospital_id'     => $hospital->id,
-            'patient_name'    => $request->patient_name,
-            'patient_age'     => $request->patient_age,
-            'patient_gender'  => $request->patient_gender,
-            'blood_type'      => $request->blood_type,
+            'requester_id' => auth()->id(),
+            'hospital_id' => $hospital->id,
+            'patient_name' => $request->patient_name,
+            'patient_age' => $request->patient_age,
+            'patient_gender' => $request->patient_gender,
+            'blood_type' => $request->blood_type,
             'units_requested' => $request->units_requested,
-            'priority'        => $request->priority,
-            'diagnosis'       => $request->diagnosis,
-            'notes'           => $request->notes,
-            'status'          => 'pending',
+            'priority' => $request->priority,
+            'diagnosis' => $request->diagnosis,
+            'notes' => $request->notes,
+            'status' => 'pending',
         ]);
+
+        $this->logActivity(
+            'create',
+            'إنشاء طلب دم جديد (الفصيلة: ' . $request->blood_type .
+            ', الكمية: ' . $request->units_requested . ')'
+        );
 
         return redirect()
             ->route('hospital.requests.index')
