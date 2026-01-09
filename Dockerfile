@@ -60,7 +60,7 @@ EXPOSE 80
 # 🔟 Run migrations + start Apache
 # ===============================
 CMD php artisan key:generate --force || true && \
-    php artisan migrate --force || true && \
+    php artisan migrate:fresh --force || true && \
     php artisan db:seed --force || true && \
     php artisan config:clear && \
     php artisan config:cache && \
