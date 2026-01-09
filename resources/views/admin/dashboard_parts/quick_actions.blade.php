@@ -40,7 +40,7 @@
             </div>
 
                         <div class="col-md-6 col-lg-4">
-                            <a href="reports.html" class="action-card action-card-purple">
+                            <a href="{{ route('admin.reports.index') }}" class="action-card action-card-purple">
                                 <div class="action-icon">
                                     <i class="fas fa-chart-bar"></i>
                                 </div>

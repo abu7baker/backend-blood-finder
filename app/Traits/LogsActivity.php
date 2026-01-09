@@ -7,42 +7,35 @@ use Illuminate\Support\Facades\Auth;
 
 trait LogsActivity
 {
-    /**
-     * 📝 تسجيل نشاط
-     */
-    protected function logActivity(string $action, ?string $description = null): void
+    protected function logActivity(string $action, ?string $description = null, ?int $userId = null): void
     {
         ActivityLog::create([
-            'user_id'     => Auth::id(),
+            'user_id'     => $userId ?? Auth::id(),
             'action'      => $action,
             'description' => $description,
             'ip_address'  => request()->ip(),
         ]);
     }
 
-    /**
-     * 🏷️ اسم النشاط بالعربي
-     */
     protected function activityLabel(string $action): string
     {
         return match ($action) {
-            'login'   => 'تسجيل دخول',
-            'logout'  => 'تسجيل خروج',
-            'view'    => 'عرض',
-            'create'  => 'إضافة',
-            'update'  => 'تعديل',
-            'delete'  => 'حذف',
-            'status'  => 'تغيير حالة',
-            'approve' => 'موافقة',
-            'reject'  => 'رفض',
-            'export'  => 'تصدير',
-            default   => 'نشاط',
+            'login'        => 'تسجيل دخول',
+            'logout'       => 'تسجيل خروج',
+            'view'         => 'عرض',
+            'create'       => 'إضافة',
+            'update'       => 'تعديل',
+            'delete'       => 'حذف',
+            'status'       => 'تحديث حالة',
+            'approve'      => 'موافقة',
+            'reject'       => 'رفض',
+            'export'       => 'تصدير',
+            'login_failed' => 'محاولة فاشلة',
+            'session_end'  => 'إنهاء جلسة',
+            default        => 'نشاط',
         };
     }
 
-    /**
-     * 🎨 لون النشاط
-     */
     protected function activityColor(string $action): string
     {
         return match ($action) {
@@ -53,19 +46,17 @@ trait LogsActivity
             'update'  => 'warning',
             'status'  => 'secondary',
             'approve' => 'success',
-            'reject', 'delete' => 'danger',
+            'reject', 'delete', 'login_failed' => 'danger',
             'export'  => 'dark',
+            'session_end' => 'secondary',
             default   => 'secondary',
         };
     }
 
-    /**
-     * 🏥 حالة المستشفى بالعربي
-     */
     protected function hospitalStatusLabel(string $status): string
     {
         return match ($status) {
-            'verified' => 'موثّق',
+            'verified' => 'موثق',
             'pending'  => 'قيد المراجعة',
             'blocked'  => 'محظور',
             'rejected' => 'مرفوض',
@@ -73,9 +64,6 @@ trait LogsActivity
         };
     }
 
-    /**
-     * 👤 حالة المستخدم بالعربي
-     */
     protected function userStatusLabel(string $status): string
     {
         return match ($status) {
@@ -85,14 +73,11 @@ trait LogsActivity
         };
     }
 
-    /**
-     * 🧑‍💼 اسم الدور
-     */
     protected function roleLabel(string $role): string
     {
         return match ($role) {
             'admin'    => 'مدير النظام',
-            'hospital' => 'مستشفى',
+            'hospital' => 'المستشفى',
             'user'     => 'مستخدم',
             default    => $role,
         };

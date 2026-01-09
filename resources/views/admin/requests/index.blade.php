@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+﻿@extends('layouts.admin')
 
 @section('title', 'إدارة طلبات الدم')
 
@@ -69,6 +69,7 @@
                             <option value="all" {{ request('status') == 'all' ? 'selected' : '' }}>كل الحالات</option>
                             <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>قيد المراجعة</option>
                             <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>مقبول</option>
+                            <option value="in_progress">جاري اكتمال عملية التبرع</option>
                             <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>مرفوض</option>
                             <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>مكتمل</option>
                         </select>
@@ -139,6 +140,8 @@
                                             <span class="badge bg-warning text-dark">قيد المراجعة</span>
                                         @elseif($req->status == 'approved')
                                             <span class="badge bg-info text-dark">مقبول</span>
+                                        @elseif($req->status == 'in_progress')
+                                            <span class="badge bg-primary">جاري اكتمال عملية التبرع</span>
                                         @elseif($req->status == 'rejected')
                                             <span class="badge bg-danger">مرفوض</span>
                                         @else
@@ -350,6 +353,7 @@
                             <select class="form-select" name="status" id="editStatusSelect" required>
                                 <option value="pending">قيد المراجعة</option>
                                 <option value="approved">مقبول</option>
+                                <option value="in_progress">جاري اكتمال عملية التبرع</option>
                                 <option value="rejected">مرفوض</option>
                                 <option value="completed">مكتمل</option>
                             </select>

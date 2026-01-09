@@ -1,12 +1,14 @@
 <?php
 
-namespace App\Http\Controllers\Hospital;
+namespace App\Http\Controllers\Hospital\Dashboard;
 
 use App\Http\Controllers\Controller;
 use App\Models\BloodRequest;
 use App\Models\Donation;
 use App\Models\BloodStock;
 use App\Models\Hospital;
+use App\Models\Appointment;
+use App\Models\Notification;
 use App\Traits\LogsActivity;
 use Illuminate\Support\Facades\Auth;
 
@@ -50,6 +52,10 @@ class HospitalDashboardController extends Controller
             'total_units' => BloodStock::where('hospital_id', $hospital->id)
                 ->sum('units_available'),
         ];
+        $requests_count = $stats['total_requests'];
+        $stock_count = $stats['total_units'];
+        $appointments_count = Appointment::where('hospital_id', $hospital->id)->count();
+        $notifications_count = Notification::where('user_id', $user->id)->count();
 
         /* =========================
             سجل نشاط
@@ -62,7 +68,11 @@ class HospitalDashboardController extends Controller
 
         return view('hospital.dashboard.index', compact(
             'hospital',
-            'stats'
+            'stats',
+            'requests_count',
+            'stock_count',
+            'appointments_count',
+            'notifications_count'
         ));
     }
 }

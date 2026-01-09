@@ -28,6 +28,7 @@ use App\Http\Controllers\Admin\BloodRequestController;
 use App\Http\Controllers\Admin\DonationController;
 use App\Http\Controllers\Admin\SecurityController;
 use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\ReportsController;
 
 
 /*
@@ -72,6 +73,8 @@ Route::middleware(['auth'])
 
         // Dashboard
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+        Route::get('/reports', [ReportsController::class, 'index'])->name('reports.index');
+        Route::get('/reports/data', [ReportsController::class, 'data'])->name('reports.data');
 
         /*
         |---------------------------------------------------------------------
@@ -133,11 +136,27 @@ Route::middleware(['auth'])
         Route::get('/donations/{id}', [DonationController::class, 'show'])->name('donations.show');
         Route::post('/donations/{id}/status', [DonationController::class, 'updateStatus'])->name('donations.status');
         Route::delete('/donations/{id}', [DonationController::class, 'destroy'])->name('donations.destroy');
-          Route::get('/security', [SecurityController::class, 'index'])->name('security.index');
+
+        /*
+        Reporsts
+        */
+        // Route::get('/reports', [DashboardController::class, 'reports'])->name('reports.index');
 
 
-         Route::put('roles/{id}', [RoleController::class, 'update'])->name('roles.update');
-    Route::delete('roles/{id}', [RoleController::class, 'destroy'])->name('roles.destroy');
+
+        /*|--------------------------------------------------------------------------
+        | Security
+        |-------------------------------------------------------------------------*/
+
+        Route::get('/security', [SecurityController::class, 'index'])->name('security.index');
+        Route::delete('/security/sessions/{type}/{id}', [SecurityController::class, 'destroySession'])->name('security.sessions.destroy');
+
+        /*|--------------------------------------------------------------------------
+        | Roles
+        |-------------------------------------------------------------------------*/
+
+        Route::put('roles/{id}', [RoleController::class, 'update'])->name('roles.update');
+        Route::delete('roles/{id}', [RoleController::class, 'destroy'])->name('roles.destroy');
     });
 
 /*
@@ -173,9 +192,7 @@ Route::prefix('hospital')
         Route::middleware('auth')->group(function () {
 
             // Dashboard
-            Route::get('/dashboard', function () {
-                return view('hospital.dashboard');
-            })->name('dashboard');
+            Route::get('/dashboard', [HospitalDashboardController::class, 'index'])->name('dashboard');
 
             /*
             |--------------------------------------------------------------------------
@@ -186,15 +203,15 @@ Route::prefix('hospital')
             Route::get('/requests/show/{id}', [HospitalRequestsController::class, 'showJson'])->name('requests.show');
             Route::post('/requests/{id}/status', [HospitalRequestsController::class, 'updateStatus'])
                 ->name('requests.update-status');
-    Route::post(
-    '/requests/{id}/patient-info',
-    [HospitalRequestsController::class, 'savePatientInfo']
-)->name('requests.patient-info');
+            Route::post(
+                '/requests/{id}/patient-info',
+                [HospitalRequestsController::class, 'savePatientInfo']
+            )->name('requests.patient-info');
 
-Route::post(
-    '/requests/store',
-    [HospitalRequestsController::class, 'store']
-)->name('requests.store');
+            Route::post(
+                '/requests/store',
+                [HospitalRequestsController::class, 'store']
+            )->name('requests.store');
 
 
 

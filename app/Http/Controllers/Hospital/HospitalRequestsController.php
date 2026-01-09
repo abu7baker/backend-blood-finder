@@ -1,5 +1,6 @@
 <?php
 
+
 namespace App\Http\Controllers\Hospital;
 
 use App\Http\Controllers\Controller;
@@ -75,7 +76,7 @@ class HospitalRequestsController extends Controller
     public function updateStatus(Request $request, $id)
     {
         $request->validate([
-            'status' => 'required|in:pending,approved,rejected,completed'
+            'status' => 'required|in:pending,approved,in_progress,rejected,completed'
         ]);
 
         $bloodRequest = BloodRequest::with(['requester', 'hospital'])->findOrFail($id);
@@ -109,6 +110,10 @@ class HospitalRequestsController extends Controller
             'approved' => [
                 'title' => 'تمت الموافقة على طلب الدم 🩸',
                 'body' => "تمت الموافقة على طلبك من {$hospitalName} وسيتم إشعار المتبرعين المناسبين.",
+            ],
+            'in_progress' => [
+                'title' => 'جاري اكتمال عملية التبرع',
+                'body' => "تم تأكيد متبرع لطلب الدم لدى {$hospitalName}. جاري اكتمال عملية التبرع.",
             ],
             'rejected' => [
                 'title' => 'تعذر توفير الدم ❌',
@@ -178,6 +183,7 @@ class HospitalRequestsController extends Controller
         $donors = User::eligibleDonors()
             ->where('blood_type', $request->blood_type)
             ->when($hospitalCity, fn($q) => $q->where('city', $hospitalCity))
+            ->where('id', '!=', $request->requester_id)
             ->get();
 
         logger('DONOR ALERT DEBUG', [
@@ -188,6 +194,9 @@ class HospitalRequestsController extends Controller
         ]);
 
         foreach ($donors as $donor) {
+            if ((int) $donor->id === (int) $request->requester_id) {
+                continue;
+            }
 
             // ✅ منع تكرار نفس المتبرع لنفس الطلب
             $existsPivot = RequestUser::where('blood_request_id', $request->id)

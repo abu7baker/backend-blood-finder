@@ -1,4 +1,4 @@
-@if($history->isEmpty())
+﻿@if($history->isEmpty())
     <p class="text-muted text-center">لا يوجد سجل تغييرات حتى الآن.</p>
 @else
 
@@ -7,6 +7,7 @@
         $statusMap = [
             'pending'   => 'قيد المراجعة',
             'approved'  => 'مقبول',
+            'in_progress' => 'جاري اكتمال عملية التبرع',
             'rejected'  => 'مرفوض',
             'completed' => 'مكتمل',
             'canceled'  => 'ملغي',
@@ -17,6 +18,7 @@
         $badgeColors = [
             'pending'   => 'bg-warning text-dark',
             'approved'  => 'bg-info text-dark',
+            'in_progress' => 'bg-primary',
             'rejected'  => 'bg-danger',
             'completed' => 'bg-success',
             'canceled'  => 'bg-secondary',

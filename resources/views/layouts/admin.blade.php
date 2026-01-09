@@ -94,7 +94,7 @@
                 <span>إدارة التبرعات</span>
             </a>
 
-            <a href="#" class="sidebar-item">
+            <a href="{{ route('admin.reports.index') }}" class="sidebar-item">
                 <i class="fas fa-chart-bar"></i>
                 <span>التقارير والإحصائيات</span>
             </a>

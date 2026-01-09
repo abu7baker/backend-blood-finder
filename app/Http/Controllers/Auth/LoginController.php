@@ -126,6 +126,11 @@ class LoginController extends Controller
         }
 
         // ❌ فشل تسجيل الدخول
+        $this->logActivity(
+            'login_failed',
+            'محاولة تسجيل دخول فاشلة: ' . $request->email_or_phone
+        );
+
         return back()->with('error', 'بيانات الدخول غير صحيحة.');
     }
 

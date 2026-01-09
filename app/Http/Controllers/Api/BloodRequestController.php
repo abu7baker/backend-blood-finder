@@ -8,6 +8,7 @@ use App\Models\RequestStatusHistory;
 use App\Models\Notification;
 use App\Models\User;
 use App\Models\RequestUser;
+use App\Models\Hospital;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -15,42 +16,134 @@ use App\Services\FCMService;
 
 class BloodRequestController extends Controller
 {
+    /**
+     * 📄 جلب جميع طلبات المستخدم الحالي
+     */
+    public function index()
+    {
+        $user = auth()->user();
+
+        $requests = BloodRequest::with(['hospital'])
+            ->where('requester_id', $user->id)
+            ->orderByDesc('created_at')
+            ->get();
+
+        return response()->json([
+            'status' => true,
+            'data'   => $requests,
+        ], 200);
+    }
+
     /* =====================================================
      | 🩸 إنشاء طلب دم (من المستخدم)
      ===================================================== */
     public function store(Request $request)
+{
+    $request->validate([
+        // ✅ الصحيح حسب تصميمك (hospital_id = hospitals.id)
+        'hospital_id'     => 'required|exists:hospitals,id',
+        'blood_type'      => 'required|string',
+        'units_requested' => 'required|integer|min:1',
+        'priority'        => 'required|in:normal,urgent',
+        'notes'           => 'nullable|string',
+    ]);
+
+    $bloodRequest = BloodRequest::create([
+        'requester_id'    => Auth::id(),
+        'hospital_id'     => $request->hospital_id,
+        'blood_type'      => $request->blood_type,
+        'units_requested' => $request->units_requested,
+        'priority'        => $request->priority,
+        'notes'           => $request->notes,
+        'status'          => 'pending',
+    ]);
+
+    $this->logStatus($bloodRequest, null, 'pending', Auth::id());
+
+    // ✅ إشعار صاحب الطلب (كما هو)
+    $this->notifyUser(
+        Auth::user(),
+        'تم إرسال طلب الدم 🩸',
+        'تم استلام طلبك بنجاح وسيتم مراجعته من قبل المستشفى.',
+        $bloodRequest
+    );
+
+    // ✅ إشعار المستشفى في لوحة التحكم (اسم المستخدم + تفاصيل الطلب)
+    $hospitalUser = $this->hospitalUserFromRequest($bloodRequest);
+    if ($hospitalUser) {
+        $requesterName = Auth::user()->full_name ?? 'مستخدم';
+        $body = "طلب جديد من: {$requesterName}\n"
+              . "الفصيلة: {$bloodRequest->blood_type}\n"
+              . "الكمية: {$bloodRequest->units_requested} وحدة\n"
+              . "الأولوية: {$bloodRequest->priority}";
+
+        Notification::create([
+            'user_id'    => $hospitalUser->id,
+            'title'      => 'طلب دم جديد 🩸',
+            'body'       => $body,
+            'type'       => 'new_blood_request',
+            'is_read'    => false,
+            'request_id' => $bloodRequest->id,
+        ]);
+    }
+
+    return response()->json([
+        'success' => true,
+        'data'    => $bloodRequest
+    ], 201);
+}
+
+
+    /**
+     * ❌ إلغاء طلب دم (من صاحب الطلب)
+     */
+    public function cancel($id)
     {
-        $request->validate([
-            'hospital_id'     => 'required|exists:users,id',
-            'blood_type'      => 'required|string',
-            'units_requested' => 'required|integer|min:1',
-            'priority'        => 'required|in:normal,urgent',
-            'notes'           => 'nullable|string',
+        $bloodRequest = BloodRequest::findOrFail($id);
+
+        // ✅ فقط صاحب الطلب يقدر يلغي
+        if ((int)$bloodRequest->requester_id !== (int)Auth::id()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'غير مصرح لك بإلغاء هذا الطلب'
+            ], 403);
+        }
+
+        // ✅ منع الإلغاء إذا اكتمل أو مرفوض أو ملغي
+        if (in_array($bloodRequest->status, ['completed', 'rejected', 'cancelled'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'لا يمكن إلغاء هذا الطلب في حالته الحالية'
+            ], 409);
+        }
+
+        $oldStatus = $bloodRequest->status;
+
+        $bloodRequest->update([
+            'status' => 'cancelled'
         ]);
 
-        $bloodRequest = BloodRequest::create([
-            'requester_id'    => Auth::id(),
-            'hospital_id'     => $request->hospital_id,
-            'blood_type'      => $request->blood_type,
-            'units_requested' => $request->units_requested,
-            'priority'        => $request->priority,
-            'notes'           => $request->notes,
-            'status'          => 'pending',
-        ]);
+        // سجل تغيير الحالة
+        $this->logStatus($bloodRequest, $oldStatus, 'cancelled', Auth::id());
 
-        $this->logStatus($bloodRequest, null, 'pending', Auth::id());
-
-        $this->notifyUser(
-            Auth::user(),
-            'تم إرسال طلب الدم 🩸',
-            'تم استلام طلبك بنجاح وسيتم مراجعته من قبل المستشفى.',
-            $bloodRequest
-        );
+        // ✅ إشعار المستشفى (تصحيح الهدف فقط بدون تغيير منطق الإلغاء)
+        $hospitalUser = $this->hospitalUserFromRequest($bloodRequest);
+        if ($hospitalUser) {
+            Notification::create([
+                'user_id'    => $hospitalUser->id,
+                'title'      => 'تم إلغاء طلب دم 🩸',
+                'body'       => 'قام صاحب الطلب بإلغاء طلب الدم.',
+                'type'       => 'blood_request_cancelled',
+                'is_read'    => false,
+                'request_id' => $bloodRequest->id,
+            ]);
+        }
 
         return response()->json([
             'success' => true,
+            'message' => 'تم إلغاء الطلب بنجاح',
             'data'    => $bloodRequest
-        ], 201);
+        ], 200);
     }
 
     /* =====================================================
@@ -59,7 +152,7 @@ class BloodRequestController extends Controller
     public function changeStatus(Request $request, $id)
     {
         $request->validate([
-            'status' => 'required|in:approved,completed',
+            'status' => 'required|in:approved,in_progress,completed',
         ]);
 
         $bloodRequest = BloodRequest::findOrFail($id);
@@ -106,6 +199,7 @@ class BloodRequestController extends Controller
      ===================================================== */
     private function notifyEligibleDonors(BloodRequest $request)
     {
+        // ملاحظة: كما هو في كودك (لم أغير المنطق)
         $hospital = User::findOrFail($request->hospital_id);
 
         $donors = User::eligibleDonors()
@@ -119,7 +213,8 @@ class BloodRequestController extends Controller
             // منع التكرار
             if (RequestUser::where('blood_request_id', $request->id)
                 ->where('user_id', $donor->id)
-                ->exists()) {
+                ->exists()
+            ) {
                 continue;
             }
 
@@ -216,6 +311,8 @@ class BloodRequestController extends Controller
             }
 
             // ✔ قبول
+            $oldStatus = $bloodRequest->status;
+
             if ($request->response === 'accepted') {
 
                 $pivot->update([
@@ -223,24 +320,29 @@ class BloodRequestController extends Controller
                     'responded_at' => now(),
                 ]);
 
-                $bloodRequest->update(['status' => 'completed']);
+                $bloodRequest->update(['status' => 'in_progress']);
+                $this->logStatus($bloodRequest, $oldStatus, 'in_progress', Auth::id());
 
                 RequestUser::where('blood_request_id', $id)
                     ->where('user_id', '!=', Auth::id())
                     ->where('status', 'pending')
                     ->update(['status' => 'unavailable']);
 
-                $donor    = Auth::user();
-                $hospital = User::find($bloodRequest->hospital_id);
+                $donor = Auth::user();
 
-                Notification::create([
-                    'user_id'    => $hospital->id,
-                    'title'      => 'متبرع وافق على طلب الدم 🩸',
-                    'body'       => "المتبرع: {$donor->full_name}\nرقم الهاتف: {$donor->phone}",
-                    'type'       => 'donor_accepted',
-                    'is_read'    => false,
-                    'request_id' => $bloodRequest->id,
-                ]);
+                // ✅ إشعار المستشفى (تصحيح الهدف فقط)
+                $hospitalUser = $this->hospitalUserFromRequest($bloodRequest);
+
+                if ($hospitalUser) {
+                    Notification::create([
+                        'user_id'    => $hospitalUser->id,
+                        'title'      => 'متبرع وافق على طلب الدم 🩸',
+                        'body'       => "المتبرع: {$donor->full_name}\nرقم الهاتف: {$donor->phone}",
+                        'type'       => 'donor_accepted',
+                        'is_read'    => false,
+                        'request_id' => $bloodRequest->id,
+                    ]);
+                }
 
                 return response()->json([
                     'success' => true,
@@ -288,5 +390,23 @@ class BloodRequestController extends Controller
             'is_read'    => false,
             'request_id' => optional($request)->id,
         ]);
+    }
+
+    /* =====================================================
+     | 🏥 جلب حساب المستشفى الصحيح من الطلب
+     | يدعم حالتين:
+     | 1) hospital_id يشير إلى hospitals.id  -> نأخذ hospitals.user_id
+     | 2) hospital_id يشير إلى users.id      -> نستخدمه مباشرة
+     ===================================================== */
+    private function hospitalUserFromRequest(BloodRequest $bloodRequest): ?User
+    {
+        // الحالة (1): hospital_id = hospitals.id
+        $hospital = Hospital::find($bloodRequest->hospital_id);
+        if ($hospital && !empty($hospital->user_id)) {
+            return User::find($hospital->user_id);
+        }
+
+        // الحالة (2): hospital_id = users.id
+        return User::find($bloodRequest->hospital_id);
     }
 }

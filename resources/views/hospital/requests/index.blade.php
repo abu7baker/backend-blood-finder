@@ -1,4 +1,4 @@
-@extends('hospital.layouts.hospital')
+﻿@extends('hospital.layouts.hospital')
 
 @section('title', 'طلبات الدم')
 
@@ -119,6 +119,8 @@
                                                 <span class="badge bg-warning text-dark">قيد المراجعة</span>
                                             @elseif($req->status == 'approved')
                                                 <span class="badge bg-info text-dark">مقبول</span>
+                                            @elseif($req->status == 'in_progress')
+                                                <span class="badge bg-primary">جاري اكتمال عملية التبرع</span>
                                             @elseif($req->status == 'rejected')
                                                 <span class="badge bg-danger">مرفوض</span>
                                             @else
@@ -212,6 +214,7 @@
                                 <select id="status_select" class="form-select">
                                     <option value="pending">قيد المراجعة</option>
                                     <option value="approved">مقبول</option>
+                                    <option value="in_progress">جاري اكتمال عملية التبرع</option>
                                     <option value="rejected">مرفوض</option>
                                     <option value="completed">مكتمل</option>
                                 </select>

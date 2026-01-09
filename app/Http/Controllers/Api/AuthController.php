@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Traits\LogsActivity;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
@@ -14,6 +15,8 @@ use Throwable;
 
 class AuthController extends Controller
 {
+    use LogsActivity;
+
     /* =====================================================
      |  تسجيل مستخدم جديد (مع OTP)
      ===================================================== */
@@ -124,7 +127,8 @@ class AuthController extends Controller
                 'email_verification_expires_at' => null,
             ]);
 
-            $token = $user->createToken('auth_token')->plainTextToken;
+            $token = $this->createTokenForDevice($user, $request);
+            $this->logActivity('login', 'تسجيل دخول عبر التطبيق: ' . $user->full_name, $user->id);
 
             return response()->json([
                 'success' => true,
@@ -156,6 +160,12 @@ class AuthController extends Controller
             $user = User::where('phone', $request->phone)->first();
 
             if (!$user || !Hash::check($request->password, $user->password)) {
+                $this->logActivity(
+                    'login_failed',
+                    'محاولة تسجيل دخول فاشلة عبر التطبيق: ' . $request->phone,
+                    $user?->id
+                );
+
                 return response()->json([
                     'success' => false,
                     'message' => 'رقم الهاتف أو كلمة المرور غير صحيحة',
@@ -163,6 +173,12 @@ class AuthController extends Controller
             }
 
             if (!$user->is_verified) {
+                $this->logActivity(
+                    'login_failed',
+                    'محاولة تسجيل دخول غير مفعل عبر التطبيق: ' . $user->full_name,
+                    $user->id
+                );
+
                 return response()->json([
                     'success' => false,
                     'needs_verification' => true,
@@ -170,7 +186,8 @@ class AuthController extends Controller
                 ], 403);
             }
 
-            $token = $user->createToken('auth_token')->plainTextToken;
+            $token = $this->createTokenForDevice($user, $request);
+            $this->logActivity('login', 'تسجيل دخول عبر التطبيق: ' . $user->full_name, $user->id);
 
             return response()->json([
                 'success' => true,
@@ -234,7 +251,8 @@ class AuthController extends Controller
                 is_null($user->city);
         }
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+        $token = $this->createTokenForDevice($user, $request);
+        $this->logActivity('login', 'تسجيل دخول عبر التطبيق: ' . $user->full_name, $user->id);
 
         return response()->json([
             'success' => true,
@@ -287,11 +305,40 @@ class AuthController extends Controller
      ===================================================== */
     public function logout(Request $request)
     {
-        $request->user()->currentAccessToken()->delete();
+        $user = $request->user();
+        $this->logActivity('logout', 'تسجيل خروج عبر التطبيق: ' . $user->full_name, $user->id);
+        $user->currentAccessToken()->delete();
 
         return response()->json([
             'success' => true,
             'message' => 'تم تسجيل الخروج بنجاح',
         ]);
+    }
+
+    private function createTokenForDevice(User $user, Request $request): string
+    {
+        $tokenName = $this->resolveTokenName($request);
+        $newToken = $user->createToken($tokenName);
+
+        $newToken->accessToken->forceFill([
+            'device_name' => $request->input('device_name') ?: null,
+            'ip_address'  => $request->ip(),
+            'user_agent'  => $request->userAgent() ?: null,
+        ])->save();
+
+        return $newToken->plainTextToken;
+    }
+
+    private function resolveTokenName(Request $request): string
+    {
+        $deviceName = trim((string) $request->input('device_name'));
+
+        if ($deviceName !== '') {
+            return $deviceName;
+        }
+
+        $userAgent = (string) $request->userAgent();
+
+        return $userAgent !== '' ? $userAgent : 'auth_token';
     }
 }

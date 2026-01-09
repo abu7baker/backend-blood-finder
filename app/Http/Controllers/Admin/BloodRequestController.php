@@ -155,7 +155,7 @@ class BloodRequestController extends Controller
     public function changeStatus(Request $request, $id)
     {
         $request->validate([
-            'status' => 'required|in:pending,approved,rejected,completed'
+            'status' => 'required|in:pending,approved,in_progress,rejected,completed'
         ]);
 
         $req = BloodRequest::with('hospital')->findOrFail($id);

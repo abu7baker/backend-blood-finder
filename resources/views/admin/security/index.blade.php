@@ -505,22 +505,40 @@
                                                 {{ \Carbon\Carbon::createFromTimestamp($session->last_activity)->diffForHumans() }}
                                             </td>
 
-                                            <td dir="ltr">{{ $session->ip_address }}</td>
+                                            <td dir="ltr">{{ $session->ip_address ?? '-' }}</td>
 
                                             <td>
-                                                @if(str_contains($session->user_agent, 'Mobile'))
-                                                    <i class="fas fa-mobile"></i> Mobile
-                                                @elseif(str_contains($session->user_agent, 'Tablet'))
-                                                    <i class="fas fa-tablet"></i> Tablet
+                                                @php
+                                                    $userAgent = $session->user_agent ?? '';
+                                                    $deviceName = $session->device_name ?? '';
+                                                @endphp
+                                                @if($session->session_type === 'token')
+                                                    <i class="fas fa-mobile"></i> {{ $deviceName !== '' ? $deviceName : 'تطبيق' }}
+                                                @elseif(
+                                                    str_contains($userAgent, 'Mobile') ||
+                                                    str_contains($userAgent, 'Android') ||
+                                                    str_contains($userAgent, 'iPhone')
+                                                )
+                                                    <i class="fas fa-mobile"></i> هاتف
+                                                @elseif(
+                                                    str_contains($userAgent, 'Tablet') ||
+                                                    str_contains($userAgent, 'iPad')
+                                                )
+                                                    <i class="fas fa-tablet"></i> جهاز لوحي
                                                 @else
-                                                    <i class="fas fa-desktop"></i> Desktop
+                                                    <i class="fas fa-desktop"></i> كمبيوتر
                                                 @endif
                                             </td>
 
                                             <td>
-                                                <button class="btn btn-sm btn-outline-danger" disabled>
-                                                    <i class="fas fa-power-off"></i>
-                                                </button>
+                                                <form method="POST"
+                                                    action="{{ route('admin.security.sessions.destroy', [$session->session_type, $session->id]) }}">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button class="btn btn-sm btn-outline-danger" type="submit">
+                                                        <i class="fas fa-power-off"></i>
+                                                    </button>
+                                                </form>
                                             </td>
                                         </tr>
                                     @empty
