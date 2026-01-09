@@ -32,35 +32,66 @@ document.addEventListener("DOMContentLoaded", () => {
     // --- Auto behavior when resizing ---
     window.addEventListener("resize", () => {
         if (window.innerWidth < 992) {
-            closeSidebar(true);
+            closeSidebar();
         } else {
             sidebarOverlay.classList.remove("active");
+            document.body.classList.remove("no-scroll");
         }
     });
 
     // --- Functions ---
-   function openSidebar() {
-    sidebar.classList.remove("closed");
-    sidebar.classList.add("active");
+    function openSidebar() {
+        sidebar.classList.remove("closed");
+        sidebar.classList.add("active");
 
-    // أضف هذا:
-    document.body.classList.add("sidebar-open");
+        document.body.classList.add("sidebar-open");
 
-    if (window.innerWidth < 100) {
-        sidebarOverlay.classList.add("active");
+        if (window.innerWidth < 992) {
+            sidebarOverlay.classList.add("active");
+            document.body.classList.add("no-scroll");
+        }
     }
+
+    function closeSidebar() {
+        sidebar.classList.add("closed");
+        sidebar.classList.remove("active");
+
+        document.body.classList.remove("sidebar-open");
+        document.body.classList.remove("no-scroll");
+
+        sidebarOverlay.classList.remove("active");
+    }
+
+});
+
+/*-------------------------------------
+    Theme Toggle (Dark Mode)
+-------------------------------------*/
+const themeToggles = document.querySelectorAll("[data-theme-toggle]");
+const savedTheme = localStorage.getItem("theme");
+
+if (savedTheme === "dark") {
+    document.body.classList.add("dark-mode");
 }
 
-    function closeSidebar(force = false) {
-    sidebar.classList.add("closed");
-    sidebar.classList.remove("active");
-    
-    // أضف هذا:
-    document.body.classList.remove("sidebar-open");
-
-    sidebarOverlay.classList.remove("active");
+function syncThemeIcons() {
+    const isDark = document.body.classList.contains("dark-mode");
+    themeToggles.forEach(btn => {
+        const icon = btn.querySelector("i");
+        if (!icon) return;
+        icon.classList.toggle("fa-moon", !isDark);
+        icon.classList.toggle("fa-sun", isDark);
+    });
 }
 
+syncThemeIcons();
+
+themeToggles.forEach(btn => {
+    btn.addEventListener("click", () => {
+        const isDark = document.body.classList.toggle("dark-mode");
+        localStorage.setItem("theme", isDark ? "dark" : "light");
+        syncThemeIcons();
+    });
 });
 /*-------------------------------------
     Sidebar Toggle

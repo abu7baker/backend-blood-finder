@@ -29,6 +29,7 @@ use App\Http\Controllers\Admin\DonationController;
 use App\Http\Controllers\Admin\SecurityController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\ReportsController;
+use App\Http\Controllers\Admin\ProfileController;
 
 
 /*
@@ -75,6 +76,11 @@ Route::middleware(['auth'])
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
         Route::get('/reports', [ReportsController::class, 'index'])->name('reports.index');
         Route::get('/reports/data', [ReportsController::class, 'data'])->name('reports.data');
+        Route::get('/profile', [ProfileController::class, 'index'])->name('profile.index');
+        Route::put('/profile/update-profile', [ProfileController::class, 'updateProfile'])->name('profile.update');
+        Route::put('/profile/update-credentials', [ProfileController::class, 'updateCredentials'])->name('profile.credentials');
+        Route::put('/profile/update-password', [ProfileController::class, 'updatePassword'])->name('profile.password');
+        Route::post('/profile/check-password', [ProfileController::class, 'checkPassword'])->name('profile.checkPassword');
 
         /*
         |---------------------------------------------------------------------

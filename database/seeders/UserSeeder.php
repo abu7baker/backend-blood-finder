@@ -19,10 +19,11 @@ class UserSeeder extends Seeder
         User::updateOrCreate(
             ['email' => 'admin@bloodfinder.com'],
             [
-                'full_name'            => 'System Admin',
-                'phone'                => '777000001',
+                'full_name'            => 'عبدالله عبدالعزيز حمود على ',
+                'phone'                => '777670210',
                 'password'             => Hash::make('123456'),
                 'gender'               => 'male',
+                'age'                  => 24,
                 'city'                 => 'Sana\'a',
                 'blood_type'           => 'O+',
                 'donation_eligibility' => 'eligible',

@@ -105,7 +105,7 @@
         </nav>
 
         <div class="sidebar-footer">
-            <button id="themeToggle" class="btn btn-outline-secondary w-100 mb-2">
+            <button id="themeToggle" class="btn btn-outline-secondary w-100 mb-2" data-theme-toggle>
                 <i class="fas fa-moon"></i> الوضع الليلي
             </button>
 

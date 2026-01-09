@@ -61,54 +61,69 @@
         </div>
 
         {{-- عناصر السايد بار --}}
-        <nav class="sidebar-menu">
-            <a href="{{ route('admin.dashboard') }}"
-               class="sidebar-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
-                <i class="fas fa-gauge"></i>
-                <span>لوحة التحكم</span>
-            </a>
+       <nav class="sidebar-menu">
 
-            <a href="{{ route('admin.users.index') }}"
-               class="sidebar-item {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
-                <i class="fas fa-users"></i>
-                <span>إدارة المستخدمين</span>
-            </a>
+    <a href="{{ route('admin.dashboard') }}"
+       class="sidebar-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
+        <i class="fas fa-gauge"></i>
+        <span>لوحة التحكم</span>
+    </a>
 
-            <a href="{{ route('admin.hospitals.index') }}"
-               class="sidebar-item {{ request()->routeIs('admin.hospitals.*') ? 'active' : '' }}">
-                <i class="fas fa-hospital"></i>
-                <span>إدارة المستشفيات</span>
-            </a>
+    <a href="{{ route('admin.users.index') }}"
+       class="sidebar-item {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
+        <i class="fas fa-users"></i>
+        <span>إدارة المستخدمين</span>
+    </a>
 
-            <a href="{{ route('admin.inventory.index') }}" class="sidebar-item">
-                <i class="fas fa-boxes-stacked"></i>
-                <span>إدارة المخزون</span>
-            </a>
+    <a href="{{ route('admin.hospitals.index') }}"
+       class="sidebar-item {{ request()->routeIs('admin.hospitals.*') ? 'active' : '' }}">
+        <i class="fas fa-hospital"></i>
+        <span>إدارة المستشفيات</span>
+    </a>
 
-            <a href="{{ route('admin.requests.index') }}" class="sidebar-item">
-                <i class="fas fa-droplet"></i>
-                <span>إدارة الطلبات</span>
-            </a>
-            <a href="{{ route('admin.donations.index') }}" class="sidebar-item">
-                <i class="fas fa-droplet"></i>
-                <span>إدارة التبرعات</span>
-            </a>
+    <a href="{{ route('admin.inventory.index') }}"
+       class="sidebar-item {{ request()->routeIs('admin.inventory.*') ? 'active' : '' }}">
+        <i class="fas fa-boxes-stacked"></i>
+        <span>إدارة المخزون</span>
+    </a>
 
-            <a href="{{ route('admin.reports.index') }}" class="sidebar-item">
-                <i class="fas fa-chart-bar"></i>
-                <span>التقارير والإحصائيات</span>
-            </a>
+    <a href="{{ route('admin.requests.index') }}"
+       class="sidebar-item {{ request()->routeIs('admin.requests.*') ? 'active' : '' }}">
+        <i class="fas fa-droplet"></i>
+        <span>إدارة الطلبات</span>
+    </a>
 
-            <a href="{{ route('admin.security.index') }}" class="sidebar-item">
-                <i class="fas fa-shield-halved"></i>
-                <span>الأمان والصلاحيات</span>
-            </a>
+    <a href="{{ route('admin.donations.index') }}"
+       class="sidebar-item {{ request()->routeIs('admin.donations.*') ? 'active' : '' }}">
+        <i class="fas fa-hand-holding-droplet"></i>
+        <span>إدارة التبرعات</span>
+    </a>
 
-            <a href="#" class="sidebar-item">
-                <i class="fas fa-gear"></i>
-                <span>إعدادات النظام</span>
-            </a>
-        </nav>
+    <a href="{{ route('admin.reports.index') }}"
+       class="sidebar-item {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}">
+        <i class="fas fa-chart-bar"></i>
+        <span>التقارير والإحصائيات</span>
+    </a>
+
+    <a href="{{ route('admin.security.index') }}"
+       class="sidebar-item {{ request()->routeIs('admin.security.*') ? 'active' : '' }}">
+        <i class="fas fa-shield-halved"></i>
+        <span>الأمان والصلاحيات</span>
+    </a>
+
+    <a href="{{ route('admin.profile.index') }}"
+       class="sidebar-item {{ request()->routeIs('admin.profile.*') ? 'active' : '' }}">
+        <i class="fas fa-user"></i>
+        <span>الملف الشخصي</span>
+    </a>
+
+    <a href="#"
+       class="sidebar-item {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
+        <i class="fas fa-gear"></i>
+        <span>إعدادات النظام</span>
+    </a>
+
+</nav>
 
         {{-- زر الوضع الليلي + تسجيل الخروج --}}
         <div class="sidebar-footer">
@@ -162,7 +177,7 @@
                             <i class="fas fa-chevron-down small"></i>
                         </button>
                         <div class="dropdown-menu dropdown-menu-end">
-                            <a href="#" class="dropdown-item">
+                            <a href="{{ route('admin.profile.index') }}" class="dropdown-item">
                                 <i class="fas fa-user me-2"></i> الملف الشخصي
                             </a>
                             <a href="#" class="dropdown-item">

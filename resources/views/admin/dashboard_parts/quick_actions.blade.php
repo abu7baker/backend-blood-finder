@@ -52,7 +52,7 @@
                         </div>
                         
                         <div class="col-md-6 col-lg-4">
-                            <a href="security.html" class="action-card action-card-orange">
+                            <a href="{{ route('admin.security.index') }}" class="action-card action-card-orange">
                                 <div class="action-icon">
                                     <i class="fas fa-shield-halved"></i>
                                 </div>
