@@ -9,6 +9,7 @@ use App\Traits\LogsActivity;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Cache;
+use App\Services\BrevoMailService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Database\QueryException;
@@ -22,106 +23,59 @@ class AuthController extends Controller
     /* =====================================================
      |  تسجيل مستخدم جديد (إرسال OTP فقط – بدون إنشاء حساب)
      ===================================================== */
-    public function register(Request $request)
+  public function register(Request $request)
 {
-    try {
-        // =============================
-        // ✅ Validation
-        // =============================
-        $data = $request->validate([
-            'full_name'        => 'required|string|max:255',
-            'email'            => 'required|email',
-            'phone'            => 'nullable|string|max:20',
-            'age'              => 'nullable|integer|min:18|max:70',
-            'gender'           => 'nullable|in:male,female',
-            'city'             => 'nullable|string|max:255',
-            'blood_type'       => 'nullable|string|max:10',
-            'chronic_disease'  => 'nullable|string|max:255',
-            'emergency_phone'  => 'nullable|string|max:20',
-            'password'         => 'required|string|min:6',
-        ]);
+    $data = $request->validate([
+        'full_name' => 'required|string|max:255',
+        'email' => 'required|email',
+        'password' => 'required|string|min:6',
+        'phone' => 'nullable|string|max:20',
+        'age' => 'nullable|integer|min:18|max:70',
+        'gender' => 'nullable|in:male,female',
+        'city' => 'nullable|string|max:255',
+        'blood_type' => 'nullable|string|max:10',
+        'chronic_disease' => 'nullable|string|max:255',
+        'emergency_phone' => 'nullable|string|max:20',
+    ]);
 
-        // =============================
-        // ✅ تنظيف القيم الفارغة
-        // =============================
-        foreach ($data as $key => $value) {
-            if ($value === '') {
-                $data[$key] = null;
-            }
-        }
-
-        // =============================
-        // 🔐 إنشاء OTP
-        // =============================
-        $otp = rand(100000, 999999);
-
-        // =============================
-        // 🧠 تخزين مؤقت (10 دقائق)
-        // =============================
-        Cache::put(
-            'register_' . $data['email'],
-            [
-                'data' => $data,
-                'otp'  => $otp,
-            ],
-            now()->addMinutes(10)
-        );
-
-        Log::info('REGISTER: OTP generated for ' . $data['email']);
-
-        // =============================
-        // ✉️ إرسال الإيميل (محمي)
-        // =============================
-        try {
-            Mail::raw(
-                "مرحباً {$data['full_name']}\n\nرمز التحقق: {$otp}\n\nالرمز صالح لمدة 10 دقائق.",
-                function ($message) use ($data) {
-                    $message->to($data['email'])
-                            ->subject('رمز التحقق من البريد الإلكتروني');
-                }
-            );
-
-            Log::info('REGISTER: Mail sent successfully to ' . $data['email']);
-
-        } catch (\Throwable $mailError) {
-
-            Log::error('REGISTER MAIL ERROR: ' . $mailError->getMessage());
-
-            return response()->json([
-                'success' => false,
-                'message' => 'تعذر إرسال رمز التحقق إلى البريد الإلكتروني. يرجى المحاولة لاحقًا.',
-                'error'   => config('app.debug') ? $mailError->getMessage() : null,
-            ], 500);
-        }
-
-        // =============================
-        // ✅ Response
-        // =============================
-        return response()->json([
-            'success'            => true,
-            'message'            => 'تم إرسال رمز التحقق إلى البريد الإلكتروني',
-            'needs_verification' => true,
-        ], 200);
-
-    } catch (ValidationException $e) {
+    if (User::where('email', $data['email'])->exists()) {
         return response()->json([
             'success' => false,
-            'type'    => 'validation_error',
-            'message' => 'خطأ في البيانات المدخلة',
-            'errors'  => $e->errors(),
+            'message' => 'البريد الإلكتروني مستخدم مسبقًا',
         ], 422);
+    }
 
-    } catch (Throwable $e) {
+    $otp = rand(100000, 999999);
 
-        Log::error('REGISTER ERROR: ' . $e->getMessage());
+    Cache::put(
+        'register_' . $data['email'],
+        [
+            'data' => $data,
+            'otp'  => $otp,
+        ],
+        now()->addMinutes(10)
+    );
 
+    $mail = new BrevoMailService();
+
+    $sent = $mail->sendOtp(
+        $data['email'],
+        $data['full_name'],
+        $otp
+    );
+
+    if (!$sent) {
         return response()->json([
             'success' => false,
-            'type'    => 'server_error',
-            'message' => 'حدث خطأ غير متوقع',
-            'error'   => config('app.debug') ? $e->getMessage() : null,
+            'message' => 'فشل إرسال البريد الإلكتروني',
         ], 500);
     }
+
+    return response()->json([
+        'success' => true,
+        'needs_verification' => true,
+        'message' => 'تم إرسال رمز التحقق إلى بريدك الإلكتروني',
+    ]);
 }
 
 

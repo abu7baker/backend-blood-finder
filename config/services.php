@@ -36,12 +36,15 @@ return [
     ],
 
     'firebase' => [
-    'project_id'  => env('FIREBASE_PROJECT_ID'),
-    'credentials' => env('FCM_CREDENTIALS'),
-],
+        'project_id' => env('FIREBASE_PROJECT_ID'),
+        'credentials' => env('FCM_CREDENTIALS'),
+    ],
+    'brevo' => [
+        'key' => env('BREVO_API_KEY'),
+    ],
 
 
-// 'fcm' => [
+    // 'fcm' => [
 //     'project_id' => env('FIREBASE_PROJECT_ID'),
 // ],
 
