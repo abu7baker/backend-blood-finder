@@ -9,7 +9,7 @@ use App\Traits\LogsActivity;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Cache;
-use App\Services\BrevoMailService;
+use App\Services\ResendMailService; 
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Database\QueryException;
@@ -59,7 +59,7 @@ class AuthController extends Controller
             now()->addMinutes(10)
         );
 
-        $mailService = app(BrevoMailService::class);
+        $mailService = app(ResendMailService::class);
 
         $sent = $mailService->sendOtp(
             $data['email'],
@@ -191,7 +191,7 @@ class AuthController extends Controller
             now()->addMinutes(10)
         );
 
-        $mailService = app(BrevoMailService::class);
+        $mailService = app(ResendMailService::class);
 
         $sent = $mailService->sendOtp(
             $request->email,

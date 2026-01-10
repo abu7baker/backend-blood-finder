@@ -18,9 +18,9 @@ return [
         'key' => env('POSTMARK_API_KEY'),
     ],
 
-    'resend' => [
-        'key' => env('RESEND_API_KEY'),
-    ],
+    // 'resend' => [
+    //     'key' => env('RESEND_API_KEY'),
+    // ],
 
     'ses' => [
         'key' => env('AWS_ACCESS_KEY_ID'),
@@ -39,16 +39,16 @@ return [
         'project_id' => env('FIREBASE_PROJECT_ID'),
         'credentials' => env('FCM_CREDENTIALS'),
     ],
-    
-    'brevo' => [
-        'key' => env('BREVO_API_KEY'),
-        'sender_email' => env('BREVO_SENDER_EMAIL'),
-        'sender_name' => env('BREVO_SENDER_NAME'),
+    'resend' => [
+        'key' => env('RESEND_API_KEY'),
+        'from_email' => env('RESEND_FROM_EMAIL'),
+        'from_name' => env('RESEND_FROM_NAME'),
     ],
 
 
 
-    
+
+
 
 
 
