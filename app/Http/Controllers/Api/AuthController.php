@@ -38,7 +38,7 @@ class AuthController extends Controller
                 'password' => 'required|string|min:6',
             ]);
 
-            // تنظيف القيم الفارغة
+            // ✅ تنظيف القيم الفارغة
             foreach ($data as $key => $value) {
                 if ($value === '') {
                     $data[$key] = null;
@@ -46,25 +46,25 @@ class AuthController extends Controller
             }
 
             // 🔐 إنشاء OTP
-            $otp = rand(100000, 999999);
+            $otp = random_int(100000, 999999);
 
-            // تخزين البيانات مؤقتًا (10 دقائق)
+            // ⏳ تخزين بيانات التسجيل مؤقتًا (10 دقائق)
             Cache::put(
                 'register_' . $data['email'],
                 [
                     'data' => $data,
-                    'otp' => $otp,
+                    'otp' => (string) $otp,
                     'expires_at' => now()->addMinutes(10),
                 ],
                 now()->addMinutes(10)
             );
 
-            // ✉️ إرسال OTP
+            // ✉️ إرسال رمز التحقق
             Mail::raw(
                 "مرحباً {$data['full_name']}\n\nرمز التحقق: {$otp}\n\nالرمز صالح لمدة 10 دقائق.",
                 function ($message) use ($data) {
                     $message->to($data['email'])
-                            ->subject('رمز التحقق من البريد الإلكتروني');
+                        ->subject('رمز التحقق من البريد الإلكتروني');
                 }
             );
 
@@ -92,6 +92,7 @@ class AuthController extends Controller
         }
     }
 
+
     /* =====================================================
      |  التحقق من OTP (هنا يتم إنشاء الحساب فعليًا)
      ===================================================== */
@@ -112,7 +113,7 @@ class AuthController extends Controller
                 ], 422);
             }
 
-            if ((string)$cached['otp'] !== (string)$request->otp) {
+            if ((string) $cached['otp'] !== (string) $request->otp) {
                 return response()->json([
                     'success' => false,
                     'message' => 'رمز التحقق غير صحيح',
@@ -163,58 +164,58 @@ class AuthController extends Controller
     /* =====================================================
  |  إعادة إرسال OTP
  ===================================================== */
-public function resendEmailOtp(Request $request)
-{
-    try {
-        $request->validate([
-            'email' => 'required|email',
-        ]);
+    public function resendEmailOtp(Request $request)
+    {
+        try {
+            $request->validate([
+                'email' => 'required|email',
+            ]);
 
-        $cached = Cache::get('register_' . $request->email);
+            $cached = Cache::get('register_' . $request->email);
 
-        if (!$cached) {
+            if (!$cached) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'لا يوجد طلب تسجيل أو انتهت صلاحية الرمز',
+                ], 422);
+            }
+
+            // إنشاء OTP جديد
+            $otp = rand(100000, 999999);
+
+            // تحديث الكاش
+            Cache::put(
+                'register_' . $request->email,
+                [
+                    'data' => $cached['data'],
+                    'otp' => $otp,
+                    'expires_at' => now()->addMinutes(10),
+                ],
+                now()->addMinutes(10)
+            );
+
+            // إرسال الإيميل
+            Mail::raw(
+                "مرحباً {$cached['data']['full_name']}\n\nرمز التحقق الجديد: {$otp}\n\nالرمز صالح لمدة 10 دقائق.",
+                function ($message) use ($request) {
+                    $message->to($request->email)
+                        ->subject('إعادة إرسال رمز التحقق');
+                }
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'تم إرسال رمز تحقق جديد إلى البريد الإلكتروني',
+            ]);
+
+        } catch (Throwable $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'لا يوجد طلب تسجيل أو انتهت صلاحية الرمز',
-            ], 422);
+                'message' => 'خطأ أثناء إعادة إرسال الرمز',
+                'error' => config('app.debug') ? $e->getMessage() : null,
+            ], 500);
         }
-
-        // إنشاء OTP جديد
-        $otp = rand(100000, 999999);
-
-        // تحديث الكاش
-        Cache::put(
-            'register_' . $request->email,
-            [
-                'data' => $cached['data'],
-                'otp' => $otp,
-                'expires_at' => now()->addMinutes(10),
-            ],
-            now()->addMinutes(10)
-        );
-
-        // إرسال الإيميل
-        Mail::raw(
-            "مرحباً {$cached['data']['full_name']}\n\nرمز التحقق الجديد: {$otp}\n\nالرمز صالح لمدة 10 دقائق.",
-            function ($message) use ($request) {
-                $message->to($request->email)
-                        ->subject('إعادة إرسال رمز التحقق');
-            }
-        );
-
-        return response()->json([
-            'success' => true,
-            'message' => 'تم إرسال رمز تحقق جديد إلى البريد الإلكتروني',
-        ]);
-
-    } catch (Throwable $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'خطأ أثناء إعادة إرسال الرمز',
-            'error' => config('app.debug') ? $e->getMessage() : null,
-        ], 500);
     }
-}
 
 
     /* =====================================================
@@ -382,8 +383,8 @@ public function resendEmailOtp(Request $request)
 
         $newToken->accessToken->forceFill([
             'device_name' => $request->input('device_name') ?: null,
-            'ip_address'  => $request->ip(),
-            'user_agent'  => $request->userAgent() ?: null,
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent() ?: null,
         ])->save();
 
         return $newToken->plainTextToken;
