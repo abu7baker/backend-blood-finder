@@ -18,9 +18,9 @@ return [
         'key' => env('POSTMARK_API_KEY'),
     ],
 
-    // 'resend' => [
-    //     'key' => env('RESEND_API_KEY'),
-    // ],
+    'resend' => [
+        'key' => env('RESEND_API_KEY'),
+    ],
 
     'ses' => [
         'key' => env('AWS_ACCESS_KEY_ID'),
@@ -39,11 +39,9 @@ return [
         'project_id' => env('FIREBASE_PROJECT_ID'),
         'credentials' => env('FCM_CREDENTIALS'),
     ],
-    'resend' => [
-        'key' => env('RESEND_API_KEY'),
-        'from_email' => env('RESEND_FROM_EMAIL'),
-        'from_name' => env('RESEND_FROM_NAME'),
-    ],
+  'mailtrap' => [
+    'token' => env('MAILTRAP_API_TOKEN'),
+],
 
 
 
