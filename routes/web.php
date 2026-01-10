@@ -2,18 +2,14 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Mail;
-
 Route::get('/test-mail', function () {
-    Mail::raw('اختبار إرسال الإيميل من Blood Finder', function ($msg) {
-        $msg->to('alhgiabobker213@gmail.com')
-            ->subject('Test Mail');
+    Mail::raw('اختبار إرسال بريد من Brevo 🚀', function ($message) {
+        $message->to('alhgiabobker213@gmail.com')
+                ->subject('Brevo SMTP Test');
     });
 
-    return 'Mail Sent Successfully';
+    return 'Email sent successfully';
 });
-
-
-
 /*
 |--------------------------------------------------------------------------
 | ADMIN Controllers
