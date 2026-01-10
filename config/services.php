@@ -39,14 +39,16 @@ return [
         'project_id' => env('FIREBASE_PROJECT_ID'),
         'credentials' => env('FCM_CREDENTIALS'),
     ],
+    
     'brevo' => [
         'key' => env('BREVO_API_KEY'),
+        'sender_email' => env('BREVO_SENDER_EMAIL'),
+        'sender_name' => env('BREVO_SENDER_NAME'),
     ],
 
 
-    // 'fcm' => [
-//     'project_id' => env('FIREBASE_PROJECT_ID'),
-// ],
+
+    
 
 
 

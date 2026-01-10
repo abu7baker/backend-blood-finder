@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class BrevoMailService
 {
@@ -16,14 +17,18 @@ class BrevoMailService
 
     public function sendOtp(string $toEmail, string $toName, string $otp): bool
     {
+        if (empty($this->apiKey)) {
+            Log::error('❌ Brevo API Key is missing');
+            return false;
+        }
+
         $response = Http::withHeaders([
             'api-key' => $this->apiKey,
             'Accept'  => 'application/json',
-            'Content-Type' => 'application/json',
         ])->post($this->endpoint, [
             'sender' => [
-                'name'  => 'Blood Finder',
-                'email' => 'alhgiabobker213@gmail.com', // نفس الـ sender الموثق
+                'name'  => config('services.brevo.sender_name'),
+                'email' => config('services.brevo.sender_email'),
             ],
             'to' => [
                 [
@@ -41,6 +46,13 @@ class BrevoMailService
                 </div>
             ",
         ]);
+
+        if (!$response->successful()) {
+            Log::error('❌ Brevo Mail Error', [
+                'status' => $response->status(),
+                'body'   => $response->body(),
+            ]);
+        }
 
         return $response->successful();
     }

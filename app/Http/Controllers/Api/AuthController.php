@@ -23,72 +23,151 @@ class AuthController extends Controller
     /* =====================================================
      |  تسجيل مستخدم جديد (إرسال OTP فقط – بدون إنشاء حساب)
      ===================================================== */
-  public function register(Request $request)
-{
-    $data = $request->validate([
-        'full_name' => 'required|string|max:255',
-        'email' => 'required|email',
-        'password' => 'required|string|min:6',
-        'phone' => 'nullable|string|max:20',
-        'age' => 'nullable|integer|min:18|max:70',
-        'gender' => 'nullable|in:male,female',
-        'city' => 'nullable|string|max:255',
-        'blood_type' => 'nullable|string|max:10',
-        'chronic_disease' => 'nullable|string|max:255',
-        'emergency_phone' => 'nullable|string|max:20',
-    ]);
+ /* =====================================================
+     |  تسجيل مستخدم جديد (إرسال OTP فقط – بدون إنشاء حساب)
+     ===================================================== */
+    public function register(Request $request)
+    {
+        $data = $request->validate([
+            'full_name' => 'required|string|max:255',
+            'email' => 'required|email',
+            'password' => 'required|string|min:6',
+            'phone' => 'nullable|string|max:20',
+            'age' => 'nullable|integer|min:18|max:70',
+            'gender' => 'nullable|in:male,female',
+            'city' => 'nullable|string|max:255',
+            'blood_type' => 'nullable|string|max:10',
+            'chronic_disease' => 'nullable|string|max:255',
+            'emergency_phone' => 'nullable|string|max:20',
+        ]);
 
-    if (User::where('email', $data['email'])->exists()) {
+        if (User::where('email', $data['email'])->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'البريد الإلكتروني مستخدم مسبقًا',
+            ], 422);
+        }
+
+        $otp = rand(100000, 999999);
+
+        Cache::put(
+            'register_' . $data['email'],
+            [
+                'data' => $data,
+                'otp'  => $otp,
+            ],
+            now()->addMinutes(10)
+        );
+
+        $mailService = app(BrevoMailService::class);
+
+        $sent = $mailService->sendOtp(
+            $data['email'],
+            $data['full_name'],
+            (string) $otp
+        );
+
+        if (!$sent) {
+            Log::error('❌ OTP email failed', ['email' => $data['email']]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'فشل إرسال البريد الإلكتروني',
+            ], 500);
+        }
+
         return response()->json([
-            'success' => false,
-            'message' => 'البريد الإلكتروني مستخدم مسبقًا',
-        ], 422);
+            'success' => true,
+            'needs_verification' => true,
+            'message' => 'تم إرسال رمز التحقق إلى بريدك الإلكتروني',
+        ]);
     }
-
-    $otp = rand(100000, 999999);
-
-    Cache::put(
-        'register_' . $data['email'],
-        [
-            'data' => $data,
-            'otp'  => $otp,
-        ],
-        now()->addMinutes(10)
-    );
-
-    $mail = new BrevoMailService();
-
-    $sent = $mail->sendOtp(
-        $data['email'],
-        $data['full_name'],
-        $otp
-    );
-
-    if (!$sent) {
-        return response()->json([
-            'success' => false,
-            'message' => 'فشل إرسال البريد الإلكتروني',
-        ], 500);
-    }
-
-    return response()->json([
-        'success' => true,
-        'needs_verification' => true,
-        'message' => 'تم إرسال رمز التحقق إلى بريدك الإلكتروني',
-    ]);
-}
-
-
 
     /* =====================================================
      |  التحقق من OTP (هنا يتم إنشاء الحساب فعليًا)
      ===================================================== */
-   public function verifyEmailOtp(Request $request)
-{
-    try {
+    public function verifyEmailOtp(Request $request)
+    {
+        try {
+            $request->validate([
+                'email' => 'required|email',
+                'otp'   => 'required|string',
+            ]);
+
+            $cacheKey = 'register_' . $request->email;
+            $cached = Cache::get($cacheKey);
+
+            if (!$cached) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'انتهت صلاحية رمز التحقق',
+                ], 422);
+            }
+
+            if ((string) $cached['otp'] !== (string) $request->otp) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'رمز التحقق غير صحيح',
+                ], 422);
+            }
+
+            if (User::where('email', $request->email)->exists()) {
+                Cache::forget($cacheKey);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'هذا البريد مسجل بالفعل، قم بتسجيل الدخول.',
+                ], 409);
+            }
+
+            $data = $cached['data'];
+
+            $user = User::create([
+                'full_name'            => $data['full_name'],
+                'email'                => $data['email'],
+                'phone'                => $data['phone'] ?? null,
+                'age'                  => $data['age'] ?? null,
+                'gender'               => $data['gender'] ?? null,
+                'city'                 => $data['city'] ?? null,
+                'blood_type'           => $data['blood_type'] ?? null,
+                'chronic_disease'      => $data['chronic_disease'] ?? null,
+                'emergency_phone'      => $data['emergency_phone'] ?? null,
+                'password'             => Hash::make($data['password']),
+                'role_id'              => 3,
+                'donation_eligibility' => 'eligible',
+                'is_verified'          => true,
+                'email_verified_at'    => now(),
+            ]);
+
+            Cache::forget($cacheKey);
+
+            $token = $this->createTokenForDevice($user, $request);
+            $this->logActivity('register', 'تسجيل حساب جديد عبر OTP', $user->id);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'تم تفعيل الحساب بنجاح',
+                'token'   => $token,
+                'user'    => $user,
+            ]);
+
+        } catch (Throwable $e) {
+            Log::error('❌ Verify OTP error', ['error' => $e->getMessage()]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'خطأ أثناء التحقق',
+            ], 500);
+        }
+    }
+
+    /* =====================================================
+     |  إعادة إرسال OTP (Brevo فقط)
+     ===================================================== */
+    public function resendEmailOtp(Request $request)
+    {
         $request->validate([
             'email' => 'required|email',
-            'otp'   => 'required|string',
         ]);
 
         $cacheKey = 'register_' . $request->email;
@@ -97,181 +176,77 @@ class AuthController extends Controller
         if (!$cached) {
             return response()->json([
                 'success' => false,
-                'message' => 'انتهت صلاحية رمز التحقق',
+                'message' => 'لا يوجد طلب تسجيل أو انتهت صلاحية الرمز',
             ], 422);
         }
 
-        if ((string) ($cached['otp'] ?? '') !== (string) $request->otp) {
+        $otp = rand(100000, 999999);
+
+        Cache::put(
+            $cacheKey,
+            [
+                'data' => $cached['data'],
+                'otp'  => $otp,
+            ],
+            now()->addMinutes(10)
+        );
+
+        $mailService = app(BrevoMailService::class);
+
+        $sent = $mailService->sendOtp(
+            $request->email,
+            $cached['data']['full_name'],
+            (string) $otp
+        );
+
+        if (!$sent) {
             return response()->json([
                 'success' => false,
-                'message' => 'رمز التحقق غير صحيح',
-            ], 422);
+                'message' => 'فشل إعادة إرسال رمز التحقق',
+            ], 500);
         }
-
-        $data = $cached['data'] ?? [];
-
-        // ✅ حماية إضافية: منع إنشاء نفس الحساب مرتين
-        if (User::where('email', $data['email'] ?? $request->email)->exists()) {
-            Cache::forget($cacheKey);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'هذا البريد مسجل بالفعل، قم بتسجيل الدخول.',
-            ], 409);
-        }
-
-        // ✅ إنشاء المستخدم بعد التحقق فقط
-        $user = User::create([
-            'full_name'            => $data['full_name'] ?? null,
-            'email'                => $data['email'] ?? $request->email,
-            'phone'                => $data['phone'] ?? null,
-            'age'                  => $data['age'] ?? null,
-            'gender'               => $data['gender'] ?? null,
-            'city'                 => $data['city'] ?? null,
-            'blood_type'           => $data['blood_type'] ?? null,
-            'chronic_disease'      => $data['chronic_disease'] ?? null,
-            'emergency_phone'      => $data['emergency_phone'] ?? null,
-
-            // ✅ هنا نفترض أن الباسورد داخل الكاش نص
-            'password'             => Hash::make((string) ($data['password'] ?? '')),
-
-            'role_id'              => 3,
-            'donation_eligibility' => 'eligible',
-            'is_verified'          => true,
-            'email_verified_at'    => now(),
-        ]);
-
-        // ✅ تنظيف الكاش بعد النجاح
-        Cache::forget($cacheKey);
-
-        $token = $this->createTokenForDevice($user, $request);
-        $this->logActivity('login', 'تسجيل حساب جديد وتحقق عبر الإيميل: ' . $user->full_name, $user->id);
 
         return response()->json([
             'success' => true,
-            'message' => 'تم تفعيل الحساب بنجاح',
-            'token'   => $token,
-            'user'    => $user,
+            'message' => 'تم إرسال رمز تحقق جديد إلى بريدك الإلكتروني',
         ]);
-
-    } catch (Throwable $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'خطأ أثناء التحقق',
-            'error'   => config('app.debug') ? $e->getMessage() : null,
-        ], 500);
     }
-}
-
-
-    /* =====================================================
- |  إعادة إرسال OTP
- ===================================================== */
-    public function resendEmailOtp(Request $request)
-    {
-        try {
-            $request->validate([
-                'email' => 'required|email',
-            ]);
-
-            $cached = Cache::get('register_' . $request->email);
-
-            if (!$cached) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'لا يوجد طلب تسجيل أو انتهت صلاحية الرمز',
-                ], 422);
-            }
-
-            // إنشاء OTP جديد
-            $otp = rand(100000, 999999);
-
-            // تحديث الكاش
-            Cache::put(
-                'register_' . $request->email,
-                [
-                    'data' => $cached['data'],
-                    'otp' => $otp,
-                    'expires_at' => now()->addMinutes(10),
-                ],
-                now()->addMinutes(10)
-            );
-
-            // إرسال الإيميل
-            Mail::raw(
-                "مرحباً {$cached['data']['full_name']}\n\nرمز التحقق الجديد: {$otp}\n\nالرمز صالح لمدة 10 دقائق.",
-                function ($message) use ($request) {
-                    $message->to($request->email)
-                        ->subject('إعادة إرسال رمز التحقق');
-                }
-            );
-
-            return response()->json([
-                'success' => true,
-                'message' => 'تم إرسال رمز تحقق جديد إلى البريد الإلكتروني',
-            ]);
-
-        } catch (Throwable $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'خطأ أثناء إعادة إرسال الرمز',
-                'error' => config('app.debug') ? $e->getMessage() : null,
-            ], 500);
-        }
-    }
-
 
     /* =====================================================
      |  تسجيل الدخول
      ===================================================== */
     public function login(Request $request)
     {
-        try {
-            $request->validate([
-                'phone' => 'required',
-                'password' => 'required',
-            ]);
+        $request->validate([
+            'phone' => 'required',
+            'password' => 'required',
+        ]);
 
-            $user = User::where('phone', $request->phone)->first();
+        $user = User::where('phone', $request->phone)->first();
 
-            if (!$user || !Hash::check($request->password, $user->password)) {
-                $this->logActivity(
-                    'login_failed',
-                    'محاولة تسجيل دخول فاشلة: ' . $request->phone,
-                    $user?->id
-                );
-
-                return response()->json([
-                    'success' => false,
-                    'message' => 'رقم الهاتف أو كلمة المرور غير صحيحة',
-                ], 401);
-            }
-
-            if (!$user->is_verified) {
-                return response()->json([
-                    'success' => false,
-                    'needs_verification' => true,
-                    'message' => 'يرجى تفعيل الحساب عبر البريد الإلكتروني',
-                ], 403);
-            }
-
-            $token = $this->createTokenForDevice($user, $request);
-            $this->logActivity('login', 'تسجيل دخول: ' . $user->full_name, $user->id);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'تم تسجيل الدخول بنجاح',
-                'token' => $token,
-                'user' => $user,
-            ]);
-
-        } catch (Throwable $e) {
+        if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json([
                 'success' => false,
-                'message' => 'خطأ في تسجيل الدخول',
-                'error' => config('app.debug') ? $e->getMessage() : null,
-            ], 500);
+                'message' => 'رقم الهاتف أو كلمة المرور غير صحيحة',
+            ], 401);
         }
+
+        if (!$user->is_verified) {
+            return response()->json([
+                'success' => false,
+                'needs_verification' => true,
+                'message' => 'يرجى تفعيل الحساب عبر البريد الإلكتروني',
+            ], 403);
+        }
+
+        $token = $this->createTokenForDevice($user, $request);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تم تسجيل الدخول بنجاح',
+            'token' => $token,
+            'user' => $user,
+        ]);
     }
 
     /* =====================================================
