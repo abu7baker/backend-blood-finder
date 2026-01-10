@@ -9,11 +9,8 @@ use App\Traits\LogsActivity;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Cache;
-use App\Services\ResendMailService; 
 use Illuminate\Support\Facades\Log;
-use Illuminate\Validation\ValidationException;
-use Illuminate\Database\QueryException;
-use Carbon\Carbon;
+use App\Mail\OtpMail;
 use Throwable;
 
 class AuthController extends Controller
@@ -21,9 +18,6 @@ class AuthController extends Controller
     use LogsActivity;
 
     /* =====================================================
-     |  تسجيل مستخدم جديد (إرسال OTP فقط – بدون إنشاء حساب)
-     ===================================================== */
- /* =====================================================
      |  تسجيل مستخدم جديد (إرسال OTP فقط – بدون إنشاء حساب)
      ===================================================== */
     public function register(Request $request)
@@ -59,16 +53,15 @@ class AuthController extends Controller
             now()->addMinutes(10)
         );
 
-        $mailService = app(ResendMailService::class);
-
-        $sent = $mailService->sendOtp(
-            $data['email'],
-            $data['full_name'],
-            (string) $otp
-        );
-
-        if (!$sent) {
-            Log::error('❌ OTP email failed', ['email' => $data['email']]);
+        try {
+            Mail::to($data['email'])->send(
+                new OtpMail((string)$otp, $data['full_name'])
+            );
+        } catch (Throwable $e) {
+            Log::error('❌ OTP Mail Error', [
+                'email' => $data['email'],
+                'error' => $e->getMessage(),
+            ]);
 
             return response()->json([
                 'success' => false,
@@ -104,7 +97,7 @@ class AuthController extends Controller
                 ], 422);
             }
 
-            if ((string) $cached['otp'] !== (string) $request->otp) {
+            if ((string)$cached['otp'] !== (string)$request->otp) {
                 return response()->json([
                     'success' => false,
                     'message' => 'رمز التحقق غير صحيح',
@@ -152,7 +145,7 @@ class AuthController extends Controller
             ]);
 
         } catch (Throwable $e) {
-            Log::error('❌ Verify OTP error', ['error' => $e->getMessage()]);
+            Log::error('❌ Verify OTP Error', ['error' => $e->getMessage()]);
 
             return response()->json([
                 'success' => false,
@@ -162,7 +155,7 @@ class AuthController extends Controller
     }
 
     /* =====================================================
-     |  إعادة إرسال OTP (Brevo فقط)
+     |  إعادة إرسال OTP
      ===================================================== */
     public function resendEmailOtp(Request $request)
     {
@@ -191,15 +184,13 @@ class AuthController extends Controller
             now()->addMinutes(10)
         );
 
-        $mailService = app(ResendMailService::class);
+        try {
+            Mail::to($request->email)->send(
+                new OtpMail((string)$otp, $cached['data']['full_name'])
+            );
+        } catch (Throwable $e) {
+            Log::error('❌ Resend OTP Error', ['error' => $e->getMessage()]);
 
-        $sent = $mailService->sendOtp(
-            $request->email,
-            $cached['data']['full_name'],
-            (string) $otp
-        );
-
-        if (!$sent) {
             return response()->json([
                 'success' => false,
                 'message' => 'فشل إعادة إرسال رمز التحقق',

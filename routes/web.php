@@ -2,13 +2,13 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Mail;
-Route::get('/test-mail', function () {
-    Mail::raw('اختبار إرسال بريد من Brevo 🚀', function ($message) {
-        $message->to('alhgiabobker213@gmail.com')
-                ->subject('Brevo SMTP Test');
+Route::get('/test-gmail', function () {
+    Mail::raw('اختبار Gmail SMTP من Laravel', function ($msg) {
+        $msg->to('alhgiabobker213@gmail.com')
+            ->subject('Test Gmail SMTP');
     });
 
-    return 'Email sent successfully';
+    return 'Mail sent successfully';
 });
 /*
 |--------------------------------------------------------------------------
