@@ -1,12 +1,18 @@
-<x-mail::message>
-# Introduction
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>رمز التحقق</title>
+</head>
+<body>
+    <h2>مرحباً {{ $userName }}</h2>
+    <p>شكراً لتسجيلك في نظام Blood Finder.</p>
+    <p>رمز التحقق الخاص بك هو:</p>
 
-The body of your message.
+    <h1 style="text-align:center; letter-spacing:4px;">
+        {{ $code }}
+    </h1>
 
-<x-mail::button :url="''">
-Button Text
-</x-mail::button>
-
-Thanks,<br>
-{{ config('app.name') }}
-</x-mail::message>
+    <p>الرمز صالح لفترة محدودة، يرجى إدخاله في التطبيق لإكمال تفعيل الحساب.</p>
+</body>
+</html>

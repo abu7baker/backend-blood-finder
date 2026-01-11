@@ -39,9 +39,9 @@ return [
         'project_id' => env('FIREBASE_PROJECT_ID'),
         'credentials' => env('FCM_CREDENTIALS'),
     ],
-  'mailtrap' => [
-    'token' => env('MAILTRAP_API_TOKEN'),
-],
+//   'mailtrap' => [
+//     'token' => env('MAILTRAP_API_TOKEN'),
+// ],
 
 
 

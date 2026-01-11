@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
-use App\Mail\OtpMail;
+use App\Mail\SendOtpMail;
 use Throwable;
 
 class AuthController extends Controller
@@ -18,8 +18,8 @@ class AuthController extends Controller
     use LogsActivity;
 
     /* =====================================================
-     |  تسجيل مستخدم جديد (إرسال OTP فقط – بدون إنشاء حساب)
-     ===================================================== */
+   |  تسجيل مستخدم جديد (إرسال OTP فقط – بدون إنشاء حساب)
+   ===================================================== */
     public function register(Request $request)
     {
         $data = $request->validate([
@@ -56,9 +56,7 @@ class AuthController extends Controller
         );
 
         try {
-            Mail::to($email)->send(
-                new OtpMail((string) $otp, $data['full_name'])
-            );
+            Mail::to($email)->send(new SendOtpMail((string) $otp, $data['full_name']));
         } catch (\Throwable $e) {
             Log::error('❌ OTP Mail Error', [
                 'email' => $email,
@@ -165,8 +163,8 @@ class AuthController extends Controller
 
 
     /* =====================================================
-     |  إعادة إرسال OTP
-     ===================================================== */
+  |  إعادة إرسال OTP
+  ===================================================== */
     public function resendEmailOtp(Request $request)
     {
         $request->validate([
@@ -175,7 +173,6 @@ class AuthController extends Controller
 
         $email = strtolower($request->email);
         $cacheKey = 'register_' . $email;
-
         $cached = Cache::get($cacheKey);
 
         if (!$cached || !isset($cached['data'])) {
@@ -197,9 +194,7 @@ class AuthController extends Controller
         );
 
         try {
-            Mail::to($email)->send(
-                new OtpMail((string) $otp, $cached['data']['full_name'])
-            );
+            Mail::to($email)->send(new SendOtpMail((string) $otp, $cached['data']['full_name']));
         } catch (\Throwable $e) {
             Log::error('❌ Resend OTP Error', [
                 'email' => $email,
