@@ -1,4 +1,3 @@
-
 FROM php:8.2-apache
 
 # ===============================
@@ -23,19 +22,21 @@ RUN a2enmod rewrite
 WORKDIR /var/www/html
 
 # ===============================
-# 4️⃣ Copy project files
-# ===============================
-COPY . .
-
-# ===============================
-# 5️⃣ Install Composer
+# 4️⃣ Install Composer
 # ===============================
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 # ===============================
-# 6️⃣ Install PHP dependencies
+# 5️⃣ Copy composer files first (Docker cache optimization)
 # ===============================
-RUN composer install --no-dev --optimize-autoloader
+COPY composer.json composer.lock ./
+
+RUN composer install --no-dev --optimize-autoloader --no-scripts
+
+# ===============================
+# 6️⃣ Copy project files
+# ===============================
+COPY . .
 
 # ===============================
 # 7️⃣ Laravel permissions
@@ -43,7 +44,7 @@ RUN composer install --no-dev --optimize-autoloader
 RUN chown -R www-data:www-data storage bootstrap/cache
 
 # ===============================
-# 8️⃣ Apache document root to /public
+# 8️⃣ Apache document root → /public
 # ===============================
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' \
@@ -57,11 +58,10 @@ RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' \
 EXPOSE 80
 
 # ===============================
-# 🔟 Run migrations + start Apache
+# 🔟 Run migrations & start Apache
 # ===============================
-CMD php artisan key:generate --force || true && \
-    php artisan migrate:fresh --force || true && \
-    php artisan db:seed --force || true && \
+CMD php artisan migrate --force && \
+php artisan db:seed --force || true && \
     php artisan config:clear && \
     php artisan config:cache && \
     apache2-foreground

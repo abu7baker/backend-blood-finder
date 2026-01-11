@@ -55,10 +55,15 @@ class AuthController extends Controller
             now()->addMinutes(10)
         );
 
-        $mailService = app(\App\Services\MailtrapMailService::class);
-
-        if (!$mailService->sendOtp($email, $data['full_name'], (string) $otp)) {
-            Log::error('❌ OTP Mail Error', ['email' => $email]);
+        try {
+            Mail::to($email)->send(
+                new OtpMail((string) $otp, $data['full_name'])
+            );
+        } catch (\Throwable $e) {
+            Log::error('❌ OTP Mail Error', [
+                'email' => $email,
+                'error' => $e->getMessage(),
+            ]);
 
             return response()->json([
                 'success' => false,
@@ -86,10 +91,11 @@ class AuthController extends Controller
                 'otp' => 'required|string',
             ]);
 
-            $cacheKey = 'register_' . $request->email;
+            $email = strtolower($request->email);
+            $cacheKey = 'register_' . $email;
             $cached = Cache::get($cacheKey);
 
-            if (!$cached) {
+            if (!$cached || !isset($cached['otp'], $cached['data'])) {
                 return response()->json([
                     'success' => false,
                     'message' => 'انتهت صلاحية رمز التحقق',
@@ -103,7 +109,7 @@ class AuthController extends Controller
                 ], 422);
             }
 
-            if (User::where('email', $request->email)->exists()) {
+            if (User::where('email', $email)->exists()) {
                 Cache::forget($cacheKey);
 
                 return response()->json([
@@ -116,7 +122,7 @@ class AuthController extends Controller
 
             $user = User::create([
                 'full_name' => $data['full_name'],
-                'email' => $data['email'],
+                'email' => $email,
                 'phone' => $data['phone'] ?? null,
                 'age' => $data['age'] ?? null,
                 'gender' => $data['gender'] ?? null,
@@ -143,8 +149,11 @@ class AuthController extends Controller
                 'user' => $user,
             ]);
 
-        } catch (Throwable $e) {
-            Log::error('❌ Verify OTP Error', ['error' => $e->getMessage()]);
+        } catch (\Throwable $e) {
+            Log::error('❌ Verify OTP Error', [
+                'email' => $request->email,
+                'error' => $e->getMessage(),
+            ]);
 
             return response()->json([
                 'success' => false,
@@ -152,6 +161,7 @@ class AuthController extends Controller
             ], 500);
         }
     }
+
 
 
     /* =====================================================
@@ -168,7 +178,7 @@ class AuthController extends Controller
 
         $cached = Cache::get($cacheKey);
 
-        if (!$cached) {
+        if (!$cached || !isset($cached['data'])) {
             return response()->json([
                 'success' => false,
                 'message' => 'لا يوجد طلب تسجيل أو انتهت صلاحية الرمز',
@@ -186,10 +196,15 @@ class AuthController extends Controller
             now()->addMinutes(10)
         );
 
-        $mailService = app(\App\Services\MailtrapMailService::class);
-
-        if (!$mailService->sendOtp($email, $cached['data']['full_name'], (string) $otp)) {
-            Log::error('❌ Resend OTP Error', ['email' => $email]);
+        try {
+            Mail::to($email)->send(
+                new OtpMail((string) $otp, $cached['data']['full_name'])
+            );
+        } catch (\Throwable $e) {
+            Log::error('❌ Resend OTP Error', [
+                'email' => $email,
+                'error' => $e->getMessage(),
+            ]);
 
             return response()->json([
                 'success' => false,
