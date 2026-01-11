@@ -39,7 +39,11 @@ return [
         'project_id' => env('FIREBASE_PROJECT_ID'),
         'credentials' => env('FCM_CREDENTIALS'),
     ],
-//   'mailtrap' => [
+    'sendgrid' => [
+        'api_key' => env('SENDGRID_API_KEY'),
+    ],
+
+    //   'mailtrap' => [
 //     'token' => env('MAILTRAP_API_TOKEN'),
 // ],
 
