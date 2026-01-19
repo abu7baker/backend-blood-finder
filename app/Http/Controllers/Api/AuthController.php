@@ -81,6 +81,7 @@ class AuthController extends Controller
     /* =====================================================
      |  التحقق من OTP (هنا يتم إنشاء الحساب فعليًا)
      ===================================================== */
+
     public function verifyEmailOtp(Request $request)
     {
         try {
@@ -89,8 +90,9 @@ class AuthController extends Controller
                 'otp' => 'required|string',
             ]);
 
-            $email = strtolower($request->email);
+            $email = strtolower(trim($request->email));
             $cacheKey = 'register_' . $email;
+
             $cached = Cache::get($cacheKey);
 
             if (!$cached || !isset($cached['otp'], $cached['data'])) {
@@ -100,6 +102,7 @@ class AuthController extends Controller
                 ], 422);
             }
 
+            // ✅ مقارنة نص بنص
             if ((string) $cached['otp'] !== (string) $request->otp) {
                 return response()->json([
                     'success' => false,
@@ -112,7 +115,7 @@ class AuthController extends Controller
 
                 return response()->json([
                     'success' => false,
-                    'message' => 'هذا البريد مسجل بالفعل، قم بتسجيل الدخول.',
+                    'message' => 'هذا البريد مسجل بالفعل',
                 ], 409);
             }
 
@@ -138,7 +141,6 @@ class AuthController extends Controller
             Cache::forget($cacheKey);
 
             $token = $this->createTokenForDevice($user, $request);
-            $this->logActivity('register', 'تسجيل حساب جديد عبر OTP', $user->id);
 
             return response()->json([
                 'success' => true,
@@ -149,7 +151,7 @@ class AuthController extends Controller
 
         } catch (\Throwable $e) {
             Log::error('❌ Verify OTP Error', [
-                'email' => $request->email,
+                'email' => $request->email ?? null,
                 'error' => $e->getMessage(),
             ]);
 
@@ -159,6 +161,8 @@ class AuthController extends Controller
             ], 500);
         }
     }
+
+
 
 
 
@@ -451,24 +455,24 @@ class AuthController extends Controller
         return $userAgent !== '' ? $userAgent : 'auth_token';
     }
     public function biometricLogin(Request $request)
-{
-    $user = $request->user(); // المستخدم من التوكن القديم
+    {
+        $user = $request->user(); // المستخدم من التوكن القديم
 
-    if (!$user) {
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'غير مصرح'
+            ], 401);
+        }
+
+        // إنشاء توكن جديد
+        $token = $user->createToken('biometric-token')->plainTextToken;
+
         return response()->json([
-            'success' => false,
-            'message' => 'غير مصرح'
-        ], 401);
+            'success' => true,
+            'token' => $token,
+            'user' => $user
+        ]);
     }
-
-    // إنشاء توكن جديد
-    $token = $user->createToken('biometric-token')->plainTextToken;
-
-    return response()->json([
-        'success' => true,
-        'token' => $token,
-        'user' => $user
-    ]);
-}
 
 }
