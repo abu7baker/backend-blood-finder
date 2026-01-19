@@ -409,6 +409,11 @@
         function togglePatientRequired(enable) {
             document.querySelectorAll("#patientFormFields input, #patientFormFields select")
                 .forEach(el => {
+                    if (["doctor_name", "diagnosis"].includes(el.name)) {
+                        el.removeAttribute("required");
+                        return;
+                    }
+
                     enable ? el.setAttribute("required", "required")
                         : el.removeAttribute("required");
                 });

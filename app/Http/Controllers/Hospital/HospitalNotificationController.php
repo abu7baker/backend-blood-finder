@@ -40,6 +40,14 @@ class HospitalNotificationController extends Controller
             ]);
         }
 
+        if ($notification->request_id) {
+            return redirect()->route('hospital.requests.index');
+        }
+
+        if ($notification->type && str_contains($notification->type, 'appointment')) {
+            return redirect()->route('hospital.appointments.index');
+        }
+
         return view('hospital.notifications.show', compact('notification'));
     }
 

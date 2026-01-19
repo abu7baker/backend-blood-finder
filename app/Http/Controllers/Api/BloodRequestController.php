@@ -9,6 +9,7 @@ use App\Models\Notification;
 use App\Models\User;
 use App\Models\RequestUser;
 use App\Models\Hospital;
+use App\Models\BloodStock;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -177,6 +178,16 @@ class BloodRequestController extends Controller
         $bloodRequest->update(['status' => $newStatus]);
 
         $this->logStatus($bloodRequest, $oldStatus, $newStatus, $changedBy);
+
+        if ($newStatus === 'completed' && $oldStatus !== 'completed') {
+            $stock = BloodStock::where('hospital_id', $bloodRequest->hospital_id)
+                ->where('blood_type', $bloodRequest->blood_type)
+                ->first();
+
+            if ($stock && $stock->units_available >= $bloodRequest->units_requested) {
+                $stock->decrement('units_available', $bloodRequest->units_requested);
+            }
+        }
 
         // إشعار صاحب الطلب فقط
         if ($requester = User::find($bloodRequest->requester_id)) {

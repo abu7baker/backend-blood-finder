@@ -52,6 +52,14 @@ class AppointmentController extends Controller
             'is_read' => false,
         ]);
 
+        Notification::create([
+            'user_id' => $hospital->user_id,
+            'title' => 'New donation appointment',
+            'body' => "New donation appointment from {$donor->full_name} on {$dateTime}.",
+            'type' => 'appointment',
+            'is_read' => false,
+        ]);
+
         // 3️⃣ تجهيز بيانات الإشعارات
         $donorToken = $donor->fcm_token;
         $hospitalUser = User::find($hospital->user_id);

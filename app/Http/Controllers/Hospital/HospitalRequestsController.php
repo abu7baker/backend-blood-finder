@@ -163,6 +163,16 @@ class HospitalRequestsController extends Controller
             $this->notifyEligibleDonors($bloodRequest);
         }
 
+        if ($request->status === 'completed' && $oldStatus !== 'completed') {
+            $stock = BloodStock::where('hospital_id', $bloodRequest->hospital_id)
+                ->where('blood_type', $bloodRequest->blood_type)
+                ->first();
+
+            if ($stock && $stock->units_available >= $bloodRequest->units_requested) {
+                $stock->decrement('units_available', $bloodRequest->units_requested);
+            }
+        }
+
         return response()->json([
             'success' => true,
             'message' => $this->uiMessages['request_updated'],
