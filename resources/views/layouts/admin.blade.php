@@ -116,12 +116,12 @@
         <i class="fas fa-user"></i>
         <span>الملف الشخصي</span>
     </a>
-
+<!-- 
     <a href="#"
        class="sidebar-item {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
         <i class="fas fa-gear"></i>
         <span>إعدادات النظام</span>
-    </a>
+    </a> -->
 
 </nav>
 
