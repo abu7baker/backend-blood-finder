@@ -203,6 +203,29 @@ Swal.fire({
 </script>
 @endif
 
+@if(session('warning'))
+<script>
+Swal.fire({
+    icon: 'warning',
+    title: 'تنبيه',
+    text: "{{ session('warning') }}",
+    confirmButtonText: 'حسنا'
+});
+</script>
+@endif
+
+@if ($errors->any())
+<script>
+let errorMessages = `{!! implode("<br>", $errors->all()) !!}`;
+Swal.fire({
+    icon: 'error',
+    title: 'خطأ',
+    html: errorMessages,
+    confirmButtonText: 'إغلاق'
+});
+</script>
+@endif
+
 @stack('scripts')
 </body>
 </html>

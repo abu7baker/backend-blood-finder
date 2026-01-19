@@ -231,7 +231,10 @@
                     </select>
 
                     <label class="form-label">المدينة</label>
-                    <input name="city" class="form-control mb-2">
+                    <select name="city" class="form-select mb-2">
+                        <option value="">اختر المحافظة</option>
+                        @include('partials.yemen-governorates-options', ['selected' => old('city')])
+                    </select>
 
                     <label class="form-label">النوع</label>
                     <select name="role_id" class="form-select mb-2" required>

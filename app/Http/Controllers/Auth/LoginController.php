@@ -56,7 +56,9 @@ class LoginController extends Controller
                     'تسجيل دخول ناجح إلى لوحة تحكم الأدمن'
                 );
 
-                return redirect()->route('admin.dashboard');
+                return redirect()
+                    ->route('admin.dashboard')
+                    ->with('success', 'تم تسجيل الدخول بنجاح');
             }
 
             /* ============================================
@@ -84,7 +86,9 @@ class LoginController extends Controller
                         'دخول مستشفى قيد المراجعة'
                     );
 
-                    return redirect()->route('hospital.pending');
+                    return redirect()
+                        ->route('hospital.pending')
+                        ->with('success', 'تم تسجيل الدخول بنجاح، الحساب قيد المراجعة');
                 }
 
                 if ($hospital->status === 'rejected') {
@@ -105,7 +109,9 @@ class LoginController extends Controller
                         'تسجيل دخول ناجح لمستشفى ' . $hospital->name
                     );
 
-                    return redirect()->route('hospital.dashboard');
+                    return redirect()
+                        ->route('hospital.dashboard')
+                        ->with('success', 'تم تسجيل الدخول بنجاح');
                 }
 
                 Auth::logout();
@@ -146,6 +152,8 @@ class LoginController extends Controller
         );
 
         Auth::logout();
-        return redirect()->route('login');
+        return redirect()
+            ->route('login')
+            ->with('success', 'تم تسجيل الخروج بنجاح');
     }
 }

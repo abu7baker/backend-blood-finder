@@ -62,7 +62,10 @@
             {{-- المدينة --}}
             <div class="col-md-6">
                 <label class="form-label fw-semibold">المدينة *</label>
-                <input type="text" name="city" class="form-control" placeholder="صنعاء" required>
+                <select name="city" class="form-select" required>
+                    <option value="">اختر المحافظة</option>
+                    @include('partials.yemen-governorates-options', ['selected' => old('city')])
+                </select>
             </div>
 
             {{-- الموقع --}}

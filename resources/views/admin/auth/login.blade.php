@@ -20,7 +20,6 @@
     {{-- نموذج تسجيل الدخول --}}
     <form action="{{ route('login.post') }}" method="POST" class="text-end">
         @csrf
-
         {{-- البريد أو الهاتف --}}
         <div class="mb-3">
             <label class="form-label fw-semibold">البريد الإلكتروني أو رقم الهاتف</label>

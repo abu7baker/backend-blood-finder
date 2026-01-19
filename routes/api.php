@@ -38,6 +38,15 @@ Route::post('/google-login', [AuthController::class, 'googleLogin']);
 // =======================
 Route::get('/hospitals', [HospitalController::class, 'index']);
 
+Route::middleware('auth:sanctum')->post(
+    '/login/biometric',
+    [AuthController::class, 'biometricLogin']
+);
+Route::middleware(auth()::class)->post(
+    '/enable-biometric',
+    [AuthController::class, 'enableBiometric']
+);
+
 /*
 |--------------------------------------------------------------------------
 | Protected Routes (auth:sanctum)
@@ -50,6 +59,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // =======================
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/update-profile', [AuthController::class, 'updateProfile']);
+    Route::post('/change-password', [AuthController::class, 'changePassword']);
+    Route::post('/delete-account', [AuthController::class, 'deleteAccount']);
     Route::post('/logout', [AuthController::class, 'logout']);
 
     // =======================
@@ -94,4 +105,5 @@ Route::middleware('auth:sanctum')->group(function () {
         '/blood-requests/{id}/change-status',
         [BloodRequestController::class, 'changeStatus']
     );
+
 });

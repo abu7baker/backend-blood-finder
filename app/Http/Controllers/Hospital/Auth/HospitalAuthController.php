@@ -184,6 +184,8 @@ class HospitalAuthController extends Controller
         }
 
         Auth::logout();
-        return redirect()->route('login');
+        return redirect()
+            ->route('login')
+            ->with('success', 'تم تسجيل الخروج بنجاح');
     }
 }

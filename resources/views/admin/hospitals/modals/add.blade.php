@@ -22,10 +22,8 @@
                         <div class="col-md-6">
                             <label>المدينة</label>
                             <select name="city" class="form-select">
-                                <option value="صنعاء">صنعاء</option>
-                                <option value="عدن">عدن</option>
-                                <option value="تعز">تعز</option>
-                                <option value="الحديدة">الحديدة</option>
+                                <option value="">???? ????????</option>
+                                @include('partials.yemen-governorates-options', ['selected' => old('city')])
                             </select>
                         </div>
 

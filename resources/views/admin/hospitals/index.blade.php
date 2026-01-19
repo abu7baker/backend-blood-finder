@@ -189,12 +189,8 @@
                         <div class="col-md-6">
                             <label class="form-label">المدينة *</label>
                             <select name="city" class="form-select" required>
-                                <option value="">اختر المدينة</option>
-                                <option value="صنعاء">صنعاء</option>
-                                <option value="عدن">عدن</option>
-                                <option value="تعز">تعز</option>
-                                <option value="إب">إب</option>
-                                <option value="الحديدة">الحديدة</option>
+                                <option value="">???? ????????</option>
+                                @include('partials.yemen-governorates-options', ['selected' => old('city')])
                             </select>
                         </div>
 
@@ -351,10 +347,8 @@
                         <div class="col-md-6">
                             <label class="small fw-bold">المدينة</label>
                             <select id="edit_city" name="city" class="form-select rounded-3 shadow-sm">
-                                <option value="صنعاء">صنعاء</option>
-                                <option value="عدن">عدن</option>
-                                <option value="تعز">تعز</option>
-                                <option value="الحديدة">الحديدة</option>
+                                <option value="">???? ????????</option>
+                                @include('partials.yemen-governorates-options', ['selected' => old('city')])
                             </select>
                         </div>
 

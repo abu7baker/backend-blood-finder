@@ -328,6 +328,74 @@ class AuthController extends Controller
     }
 
     /* =====================================================
+     |  Change Password
+     ===================================================== */
+    public function changePassword(Request $request)
+    {
+        $user = $request->user();
+
+        $data = $request->validate([
+            'current_password' => 'required',
+            'password' => 'required|min:6|confirmed',
+            'password_confirmation' => 'required',
+        ]);
+
+        if (!Hash::check($data['current_password'], $user->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Current password is incorrect.',
+            ], 422);
+        }
+
+        if (Hash::check($data['password'], $user->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'New password must be different from the current password.',
+            ], 422);
+        }
+
+        $user->update([
+            'password' => Hash::make($data['password']),
+        ]);
+
+        $this->logActivity('update', 'Password updated', $user->id);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Password updated successfully.',
+        ]);
+    }
+
+    /* =====================================================
+     |  Delete Account
+     ===================================================== */
+    public function deleteAccount(Request $request)
+    {
+        $user = $request->user();
+        // $user=$request->user($_COOKIE['sanctum_token'] ?? null);
+
+        $data = $request->validate([
+            'current_password' => 'required',
+        ]);
+
+        if (!Hash::check($data['current_password'], $user->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Current password is incorrect.',
+            ], 422);
+        }
+
+        $this->logActivity('delete', 'Account deleted', $user->id);
+        $user->tokens()->delete();
+        $user->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Account deleted successfully.',
+        ]);
+    }
+
+    /* =====================================================
      |  بيانات المستخدم الحالي
      ===================================================== */
     public function me(Request $request)
@@ -382,4 +450,25 @@ class AuthController extends Controller
 
         return $userAgent !== '' ? $userAgent : 'auth_token';
     }
+    public function biometricLogin(Request $request)
+{
+    $user = $request->user(); // المستخدم من التوكن القديم
+
+    if (!$user) {
+        return response()->json([
+            'success' => false,
+            'message' => 'غير مصرح'
+        ], 401);
+    }
+
+    // إنشاء توكن جديد
+    $token = $user->createToken('biometric-token')->plainTextToken;
+
+    return response()->json([
+        'success' => true,
+        'token' => $token,
+        'user' => $user
+    ]);
+}
+
 }

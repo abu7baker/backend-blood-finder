@@ -37,7 +37,10 @@
     <input type="text" name="phone" value="{{ $user->phone }}" class="form-control">
 
     <label>المدينة</label>
-    <input type="text" name="city" value="{{ $user->city }}" class="form-control">
+    <select name="city" class="form-select">
+        <option value="">اختر المحافظة</option>
+        @include('partials.yemen-governorates-options', ['selected' => old('city', $user->city)])
+    </select>
 
     <label>فصيلة الدم</label>
     <input type="text" name="blood_type" value="{{ $user->blood_type }}" class="form-control">

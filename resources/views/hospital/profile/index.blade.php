@@ -141,7 +141,10 @@
 
                         <div class="col-md-6">
                             <label class="title">المدينة</label>
-                            <input type="text" class="form-control" name="city" value="{{ $hospital->city }}" required>
+                            <select class="form-select" name="city" required>
+                                <option value="">اختر المحافظة</option>
+                                @include('partials.yemen-governorates-options', ['selected' => old('city', $hospital->city)])
+                            </select>
                         </div>
 
                         <div class="col-md-12">

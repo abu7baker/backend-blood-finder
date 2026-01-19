@@ -8,6 +8,7 @@ use App\Models\Hospital;
 use App\Models\BloodStock;
 use App\Models\Donation;
 use App\Models\BloodRequest;
+use App\Models\Notification;
 use Carbon\Carbon;
 
 class DashboardController extends Controller
@@ -37,7 +38,11 @@ class DashboardController extends Controller
         $quickActions = view('admin.dashboard_parts.quick_actions')->render();
 
         // === التنبيهات الحديثة (HTML جاهز) ===[[[]]]
-        $recentAlerts = view('admin.dashboard_parts.recent_alerts')->render();
+        $recentNotifications = Notification::with('user')
+            ->latest()
+            ->take(6)
+            ->get();
+        $recentAlerts = view('admin.dashboard_parts.recent_alerts', compact('recentNotifications'))->render();
 
         return view('admin.dashboard', compact(
             'totalUsers',

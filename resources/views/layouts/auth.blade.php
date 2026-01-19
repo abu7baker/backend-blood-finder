@@ -69,6 +69,17 @@
     </script>
     @endif
 
+    @if(session('warning'))
+    <script>
+    Swal.fire({
+        icon: 'warning',
+        title: 'تنبيه',
+        text: "{{ session('warning') }}",
+        confirmButtonText: 'حسنا'
+    });
+    </script>
+    @endif
+
     @if ($errors->any())
     <script>
     let errorMessages = `{!! implode("<br>", $errors->all()) !!}`;

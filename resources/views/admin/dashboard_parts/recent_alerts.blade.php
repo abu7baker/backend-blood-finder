@@ -1,77 +1,57 @@
- <!-- Recent Alerts -->
-            <div class="card custom-card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">
-                        <i class="fas fa-triangle-exclamation text-danger ms-2"></i>
-                        التنبيهات الحديثة
-                    </h5>
-                    <button class="btn btn-sm btn-outline-danger">عرض الكل</button>
-                </div>
-                <div class="card-body">
-                    <div class="alerts-container">
-                        <div class="alert-item alert-warning">
-                            <div class="alert-icon bg-warning">
-                                <i class="fas fa-triangle-exclamation"></i>
-                            </div>
-                            <div class="alert-content">
-                                <div class="d-flex justify-content-between align-items-start mb-2">
-                                    <p class="mb-0 fw-medium">انخفاض حاد في مخزون فصيلة O+ في مستشفى الثورة العام</p>
-                                    <span class="badge bg-danger">عاجل</span>
-                                </div>
-                                <div class="d-flex gap-3 text-muted small">
-                                    <span><i class="fas fa-map-marker-alt ms-1"></i>صنعاء</span>
-                                    <span>منذ 5 دقائق</span>
-                                </div>
-                            </div>
+<!-- Recent Alerts -->
+<div class="card custom-card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+            <i class="fas fa-triangle-exclamation text-danger ms-2"></i>
+            التنبيهات الحديثة
+        </h5>
+        <button class="btn btn-sm btn-outline-danger" type="button">عرض الكل</button>
+    </div>
+    <div class="card-body">
+        <div class="alerts-container">
+            @forelse ($recentNotifications as $note)
+                @php
+                    $type = $note->type ?? 'general';
+                    $styles = [
+                        'blood_request_donor_alert' => ['tone' => 'warning', 'icon' => 'fa-triangle-exclamation', 'label' => 'طارئ'],
+                        'stock_alert' => ['tone' => 'warning', 'icon' => 'fa-boxes-stacked', 'label' => 'مخزون'],
+                        'donor_alert' => ['tone' => 'info', 'icon' => 'fa-bell', 'label' => 'تنبيه'],
+                        'donor_accepted' => ['tone' => 'success', 'icon' => 'fa-heart', 'label' => 'متبرع'],
+                        'new_blood_request' => ['tone' => 'info', 'icon' => 'fa-droplet', 'label' => 'طلب جديد'],
+                        'blood_request' => ['tone' => 'info', 'icon' => 'fa-droplet', 'label' => 'طلب'],
+                        'blood_request_cancelled' => ['tone' => 'secondary', 'icon' => 'fa-ban', 'label' => 'ملغي'],
+                        'appointment_created' => ['tone' => 'info', 'icon' => 'fa-calendar-check', 'label' => 'موعد'],
+                        'appointment_approved' => ['tone' => 'success', 'icon' => 'fa-circle-check', 'label' => 'تمت الموافقة'],
+                        'appointment_rejected' => ['tone' => 'danger', 'icon' => 'fa-circle-xmark', 'label' => 'مرفوض'],
+                        'appointment_completed' => ['tone' => 'success', 'icon' => 'fa-flag-checkered', 'label' => 'مكتمل'],
+                        'single' => ['tone' => 'info', 'icon' => 'fa-bell', 'label' => 'تنبيه'],
+                        'broadcast' => ['tone' => 'info', 'icon' => 'fa-bullhorn', 'label' => 'إعلان'],
+                    ];
+                    $style = $styles[$type] ?? ['tone' => 'warning', 'icon' => 'fa-bell', 'label' => 'تنبيه'];
+                @endphp
+                <div class="alert-item alert-{{ $style['tone'] }}">
+                    <div class="alert-icon bg-{{ $style['tone'] }}">
+                        <i class="fas {{ $style['icon'] }}"></i>
+                    </div>
+                    <div class="alert-content">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <p class="mb-0 fw-medium">{{ $note->title }}</p>
+                            <span class="badge bg-{{ $style['tone'] }}">{{ $style['label'] }}</span>
                         </div>
-                        
-                        <div class="alert-item alert-info">
-                            <div class="alert-icon bg-info">
-                                <i class="fas fa-hospital"></i>
-                            </div>
-                            <div class="alert-content">
-                                <div class="d-flex justify-content-between align-items-start mb-2">
-                                    <p class="mb-0 fw-medium">طلب موافقة مستشفى جديد - مستشفى الحديدة التخصصي</p>
-                                    <span class="badge bg-warning">متوسط</span>
-                                </div>
-                                <div class="d-flex gap-3 text-muted small">
-                                    <span><i class="fas fa-map-marker-alt ms-1"></i>الحديدة</span>
-                                    <span>منذ 15 دقيقة</span>
-                                </div>
-                            </div>
+                        <div class="d-flex gap-3 text-muted small">
+                            <span><i class="fas fa-user ms-1"></i>{{ $note->user->full_name ?? 'النظام' }}</span>
+                            <span>{{ $note->created_at?->diffForHumans() }}</span>
                         </div>
-                        
-                        <div class="alert-item alert-success">
-                            <div class="alert-icon bg-success">
-                                <i class="fas fa-chart-line"></i>
-                            </div>
-                            <div class="alert-content">
-                                <div class="d-flex justify-content-between align-items-start mb-2">
-                                    <p class="mb-0 fw-medium">تم تسجيل 23 متبرع جديد اليوم في محافظة تعز</p>
-                                    <span class="badge bg-secondary">منخفض</span>
-                                </div>
-                                <div class="d-flex gap-3 text-muted small">
-                                    <span><i class="fas fa-map-marker-alt ms-1"></i>تعز</span>
-                                    <span>منذ 30 دقيقة</span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="alert-item alert-warning">
-                            <div class="alert-icon bg-warning">
-                                <i class="fas fa-triangle-exclamation"></i>
-                            </div>
-                            <div class="alert-content">
-                                <div class="d-flex justify-content-between align-items-start mb-2">
-                                    <p class="mb-0 fw-medium">تحذير: نقص في فصيلة AB- في مستشفى الكويت الجامعي</p>
-                                    <span class="badge bg-danger">عاجل</span>
-                                </div>
-                                <div class="d-flex gap-3 text-muted small">
-                                    <span><i class="fas fa-map-marker-alt ms-1"></i>صنعاء</span>
-                                    <span>منذ 45 دقيقة</span>
-                                </div>
-                            </div>
-                        </div>
+                        @if(!empty($note->body))
+                            <div class="text-muted small mt-1">{{ $note->body }}</div>
+                        @endif
                     </div>
                 </div>
-            </div>
+            @empty
+                <div class="alert alert-info text-center mb-0">
+                    لا توجد تنبيهات حالياً.
+                </div>
+            @endforelse
+        </div>
+    </div>
+</div>
