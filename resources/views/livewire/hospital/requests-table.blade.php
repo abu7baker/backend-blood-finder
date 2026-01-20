@@ -1,11 +1,11 @@
-<div wire:poll.10s>
+﻿<div wire:poll.10s>
     @unless($hasHospital)
         <div class="alert alert-danger mb-3">
             لا يمكن عرض الطلبات لأن الحساب غير مرتبط بمستشفى.
         </div>
     @endunless
 
-    {{-- ========================= الإحصائيات ========================= --}}
+    {{-- الإحصائيات --}}
     <div class="row g-4 mb-4">
 
         <div class="col-md-4">
@@ -52,7 +52,7 @@
 
     </div>
 
-    {{-- ========================= جدول الطلبات ========================= --}}
+    {{-- جدول الطلبات --}}
     <div class="card custom-card shadow-sm">
 
         <div class="card-header d-flex justify-content-between align-items-center">

@@ -1,5 +1,5 @@
-<div wire:poll.10s>
-    {{-- ====================== الإحصائيات ====================== --}}
+﻿<div wire:poll.10s>
+    {{-- الإحصائيات --}}
     <div class="row g-4 mb-4">
 
         <div class="col-md-4">
@@ -40,7 +40,7 @@
 
     </div>
 
-    {{-- ====================== الجدول ====================== --}}
+    {{-- الجدول --}}
     <div class="card custom-card">
 
         <div class="card-header d-flex justify-content-between align-items-center">
@@ -83,7 +83,7 @@
                 <input
                     type="text"
                     class="form-control"
-                    placeholder="🔍 البحث..."
+                    placeholder="ابحث..."
                     wire:model.debounce.400ms="search"
                 >
             </div>
@@ -111,7 +111,7 @@
 
                                 <td>
                                     <strong>
-                                        {{ $req->patient_name ?? ($req->requester->full_name ?? '—') }}
+                                        {{ $req->patient_name ?? ($req->requester->full_name ?? '-') }}
                                     </strong>
                                     <br>
                                     <small class="text-muted">
@@ -119,7 +119,7 @@
                                     </small>
                                 </td>
 
-                                <td>{{ optional($req->hospital)->name ?? '—' }}</td>
+                                <td>{{ optional($req->hospital)->name ?? '-' }}</td>
                                 <td>{{ $req->blood_type }}</td>
                                 <td>{{ $req->units_requested }}</td>
 
