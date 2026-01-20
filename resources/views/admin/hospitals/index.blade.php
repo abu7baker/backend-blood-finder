@@ -171,7 +171,7 @@
                     <i class="fas fa-hospital text-primary ms-2"></i>
                     إضافة مستشفى جديد
                 </h5>
-                <button class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
 
             <form action="{{ route('admin.hospitals.store') }}" method="POST">
@@ -223,7 +223,7 @@
                 </div>
 
                 <div class="modal-footer">
-                    <button class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
 
                     <button class="btn btn-primary">
                         <i class="fas fa-save ms-2"></i>
@@ -247,7 +247,7 @@
                     <i class="fas fa-hospital"></i>
                     تفاصيل المستشفى
                 </h5>
-                <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
 
             <div class="modal-body p-4">
@@ -308,7 +308,7 @@
             </div>
 
             <div class="modal-footer bg-light rounded-bottom-4">
-                <button class="btn btn-secondary px-4" data-bs-dismiss="modal">
+                <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">
                     <i class="fas fa-times"></i> إغلاق
                 </button>
             </div>
@@ -327,7 +327,7 @@
                     <i class="fas fa-edit"></i>
                     تعديل بيانات المستشفى
                 </h5>
-                <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
 
             <form id="editHospitalForm" method="POST">
@@ -383,7 +383,7 @@
                 </div>
 
                 <div class="modal-footer bg-light rounded-bottom-4">
-                    <button class="btn btn-secondary px-4" data-bs-dismiss="modal">
+                    <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">
                         <i class="fas fa-times"></i> إلغاء
                     </button>
 

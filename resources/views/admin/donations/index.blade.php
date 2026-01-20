@@ -230,7 +230,7 @@
                             <i class="fas fa-info-circle me-2"></i>
                             تفاصيل التبرع
                         </h5>
-                        <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                     </div>
 
                     <div class="modal-body" id="donationDetails">
@@ -238,7 +238,7 @@
                     </div>
 
                     <div class="modal-footer">
-                        <button class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
                     </div>
 
                 </div>
@@ -255,7 +255,7 @@
 
                         <div class="modal-header bg-warning text-white">
                             <h5 class="modal-title">تحديث حالة التبرع</h5>
-                            <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                         </div>
 
                         <div class="modal-body">
@@ -296,7 +296,7 @@
 
                         <div class="modal-header bg-danger text-white">
                             <h5 class="modal-title">حذف التبرع</h5>
-                            <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                         </div>
 
                         <div class="modal-body">

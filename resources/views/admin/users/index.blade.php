@@ -204,7 +204,7 @@
 
                 <div class="modal-header">
                     <h5 class="modal-title">إضافة مستخدم جديد</h5>
-                    <button class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
 
                 <div class="modal-body">
@@ -256,7 +256,7 @@
                 </div>
 
                 <div class="modal-footer">
-                    <button class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
                     <button class="btn btn-primary">حفظ</button>
                 </div>
 
@@ -275,7 +275,7 @@
                         <i class="fas fa-user text-primary ms-2"></i>
                         تفاصيل المستخدم
                     </h5>
-                    <button class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
 
                 <div class="modal-body">

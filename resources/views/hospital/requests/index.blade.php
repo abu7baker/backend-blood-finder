@@ -15,7 +15,7 @@
 
                         <div class="modal-header bg-primary text-white">
                             <h5 class="modal-title">تفاصيل الطلب</h5>
-                            <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                         </div>
 
                         <div class="modal-body">
@@ -62,7 +62,7 @@
 
                             <div class="modal-header bg-warning text-white">
                                 <h5 class="modal-title">تحديث الحالة</h5>
-                                <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                             </div>
 
                             <div class="modal-body">
@@ -102,7 +102,7 @@
                                     <i class="fas fa-plus me-2"></i>
                                     إضافة طلب جديد
                                 </h5>
-                                <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                             </div>
 
                             <div class="modal-body">

@@ -17,7 +17,7 @@
                             <i class="fas fa-info-circle me-2"></i>
                             تفاصيل الطلب
                         </h5>
-                        <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                     </div>
 
                     <div class="modal-body">
@@ -77,7 +77,7 @@
                     </div>
 
                     <div class="modal-footer bg-light">
-                        <button class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
                     </div>
 
                 </div>
@@ -98,7 +98,7 @@
                                 <i class="fas fa-edit me-2"></i>
                                 تعديل الطلب
                             </h5>
-                            <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                         </div>
 
                         <div class="modal-body">
@@ -148,7 +148,7 @@
                                 <i class="fas fa-sync me-2"></i>
                                 تحديث الحالة
                             </h5>
-                            <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                         </div>
 
                         <div class="modal-body">
@@ -181,7 +181,7 @@
                             <i class="fas fa-history me-2"></i>
                             سجل التغييرات
                         </h5>
-                        <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                     </div>
 
                     <div class="modal-body">
@@ -189,7 +189,7 @@
                     </div>
 
                     <div class="modal-footer">
-                        <button class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
                     </div>
 
                 </div>
@@ -210,7 +210,7 @@
                                 <i class="fas fa-trash me-2"></i>
                                 حذف الطلب
                             </h5>
-                            <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                         </div>
 
                         <div class="modal-body">
@@ -239,7 +239,7 @@
                                 <i class="fas fa-plus me-2"></i>
                                 إضافة طلب دم جديد
                             </h5>
-                            <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                         </div>
 
                         <div class="modal-body">

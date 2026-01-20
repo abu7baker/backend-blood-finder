@@ -96,7 +96,7 @@
 
                 <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title">تفاصيل الموعد</h5>
-                    <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
 
                 <div class="modal-body">
@@ -142,7 +142,7 @@
 
                     <div class="modal-header bg-warning text-white">
                         <h5 class="modal-title">تحديث حالة الموعد</h5>
-                        <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                     </div>
 
                     <div class="modal-body">

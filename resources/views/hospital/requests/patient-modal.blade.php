@@ -7,7 +7,7 @@
 
                         <div class="modal-header bg-info text-white">
                             <h5 class="modal-title">تأكيد / إدخال بيانات المريض</h5>
-                            <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                         </div>
 
                         <div class="modal-body">
