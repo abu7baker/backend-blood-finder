@@ -1,6 +1,6 @@
-@extends('layouts.admin')
+๏ปฟ@extends('layouts.admin')
 
-@section('title', 'ลฯวัษ ุแศวส วแฯใ')
+@section('title', 'ุฅุฏุงุฑุฉ ุทูุจุงุช ุงูุฏู…')
 
 @section('content')
 <main id="mainContent" class="main-content">
@@ -15,7 +15,7 @@
                     <div class="modal-header bg-primary text-white">
                         <h5 class="modal-title">
                             <i class="fas fa-info-circle me-2"></i>
-                            สÝวีํแ วแุแศ
+                            ุชูุงุตูู ุงูุทูุจ
                         </h5>
                         <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                     </div>
@@ -24,52 +24,52 @@
                         <div class="row g-3">
 
                             <div class="col-md-6">
-                                <label class="text-muted small">ไๆฺ วแุแศ</label>
+                                <label class="text-muted small">ููุน ุงูุทูุจ</label>
                                 <div id="viewType" class="fw-bold"></div>
                             </div>
 
                             <div class="col-md-6">
-                                <label class="text-muted small">วแอวแษ</label>
+                                <label class="text-muted small">ุงูุญุงูุฉ</label>
                                 <div id="viewStatus" class="fw-bold"></div>
                             </div>
 
                             <div class="col-md-6">
-                                <label class="text-muted small">วแใำสิÝ์</label>
+                                <label class="text-muted small">ุงูู…ุณุชุดูู</label>
                                 <div id="viewHospital" class="fw-bold"></div>
                             </div>
 
                             <div class="col-md-6">
-                                <label class="text-muted small">วแÝีํแษ / วแๆอฯวส</label>
+                                <label class="text-muted small">ุงููุตููุฉ / ุงููุญุฏุงุช</label>
                                 <div id="viewBlood" class="fw-bold"></div>
                             </div>
 
                             <div class="col-md-6">
-                                <label class="text-muted small">วำใ วแใัํึ</label>
+                                <label class="text-muted small">ุงุณู… ุงูู…ุฑูุถ</label>
                                 <div id="viewPatientName" class="fw-bold"></div>
                             </div>
 
                             <div class="col-md-3">
-                                <label class="text-muted small">วแฺใั</label>
+                                <label class="text-muted small">ุงูุนู…ุฑ</label>
                                 <div id="viewPatientAge" class="fw-bold"></div>
                             </div>
 
                             <div class="col-md-3">
-                                <label class="text-muted small">วแฬไำ</label>
+                                <label class="text-muted small">ุงูุฌูุณ</label>
                                 <div id="viewPatientGender" class="fw-bold"></div>
                             </div>
 
                             <div class="col-md-6">
-                                <label class="text-muted small">วำใ วแุศํศ</label>
+                                <label class="text-muted small">ุงุณู… ุงูุทุจูุจ</label>
                                 <div id="viewDoctor" class="fw-bold"></div>
                             </div>
 
                             <div class="col-md-6">
-                                <label class="text-muted small">วแสิฮํี</label>
+                                <label class="text-muted small">ุงูุชุดุฎูุต</label>
                                 <div id="viewDiag" class="fw-bold"></div>
                             </div>
 
                             <div class="col-12">
-                                <label class="text-muted small">ใแวอูวส</label>
+                                <label class="text-muted small">ู…ูุงุญุธุงุช</label>
                                 <div id="viewNotes" class="fw-bold"></div>
                             </div>
 
@@ -77,14 +77,14 @@
                     </div>
 
                     <div class="modal-footer bg-light">
-                        <button class="btn btn-secondary" data-bs-dismiss="modal">ลÛแวÞ</button>
+                        <button class="btn btn-secondary" data-bs-dismiss="modal">ุฅุบูุงู</button>
                     </div>
 
                 </div>
             </div>
         </div>
 
-        {{-- ====================== ใๆฯวแ สฺฯํแ วแุแศ ====================== --}}
+        {{-- ู…ูุฏุงู ุชุนุฏูู ุงูุทูุจ --}}
         <div class="modal fade" id="editRequestModal" tabindex="-1">
             <div class="modal-dialog modal-lg">
                 <div class="modal-content">
@@ -96,7 +96,7 @@
                         <div class="modal-header bg-success text-white">
                             <h5 class="modal-title">
                                 <i class="fas fa-edit me-2"></i>
-                                สฺฯํแ วแุแศ
+                                ุชุนุฏูู ุงูุทูุจ
                             </h5>
                             <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                         </div>
@@ -105,21 +105,21 @@
                             <div class="row g-3">
 
                                 <div class="col-md-6">
-                                    <label class="form-label">วแๆอฯวส วแใุแๆศษ</label>
+                                    <label class="form-label">ุงููุญุฏุงุช ุงูู…ุทููุจุฉ</label>
                                     <input type="number" name="units_requested" id="editUnits" class="form-control">
                                 </div>
 
                                 <div class="col-md-6">
-                                    <label class="form-label">วแรๆแๆํษ</label>
+                                    <label class="form-label">ุงูุฃููููุฉ</label>
                                     <select name="priority" id="editPriority" class="form-select">
-                                        <option value="normal">ฺวฯํ</option>
-                                        <option value="urgent">ฺวฬแ</option>
-                                        <option value="critical">อัฬ</option>
+                                        <option value="normal">ุนุงุฏู</option>
+                                        <option value="urgent">ุนุงุฌู</option>
+                                        <option value="critical">ุญุฑุฌ</option>
                                     </select>
                                 </div>
 
                                 <div class="col-md-12">
-                                    <label class="form-label">ใแวอูวส</label>
+                                    <label class="form-label">ู…ูุงุญุธุงุช</label>
                                     <textarea name="notes" id="editNotes" class="form-control"></textarea>
                                 </div>
 
@@ -127,7 +127,7 @@
                         </div>
 
                         <div class="modal-footer bg-light">
-                            <button type="submit" class="btn btn-success">อÝู วแสฺฯํแวส</button>
+                            <button type="submit" class="btn btn-success">ุญูุธ ุงูุชุนุฏููุงุช</button>
                         </div>
 
                     </form>
@@ -135,7 +135,7 @@
             </div>
         </div>
 
-        {{-- ====================== ใๆฯวแ สÛํํั วแอวแษ ====================== --}}
+        {{-- ู…ูุฏุงู ุชุบููุฑ ุงูุญุงูุฉ --}}
         <div class="modal fade" id="editStatusModal" tabindex="-1">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -146,24 +146,24 @@
                         <div class="modal-header bg-warning text-white">
                             <h5 class="modal-title">
                                 <i class="fas fa-sync me-2"></i>
-                                สอฯํห วแอวแษ
+                                ุชุญุฏูุซ ุงูุญุงูุฉ
                             </h5>
                             <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                         </div>
 
                         <div class="modal-body">
-                            <label class="form-label">วฮสั วแอวแษ วแฬฯํฯษ</label>
+                            <label class="form-label">ุงุฎุชุฑ ุงูุญุงูุฉ ุงูุฌุฏูุฏุฉ</label>
                             <select class="form-select" name="status" id="editStatusSelect" required>
-                                <option value="pending">Þํฯ วแใัวฬฺษ</option>
-                                <option value="approved">ใÞศๆแ</option>
-                                <option value="in_progress">ฬวัํ ว฿สใวแ ฺใแํษ วแสศัฺ</option>
-                                <option value="rejected">ใัÝๆึ</option>
-                                <option value="completed">ใ฿สใแ</option>
+                                <option value="pending">ููุฏ ุงูู…ุฑุงุฌุนุฉ</option>
+                                <option value="approved">ู…ูุจูู</option>
+                                <option value="in_progress">ุฌุงุฑู ุงูุชู…ุงู ุนู…ููุฉ ุงูุชุจุฑุน</option>
+                                <option value="rejected">ู…ุฑููุถ</option>
+                                <option value="completed">ู…ูุชู…ู</option>
                             </select>
                         </div>
 
                         <div class="modal-footer bg-light">
-                            <button type="submit" class="btn btn-warning text-white">อÝู</button>
+                            <button type="submit" class="btn btn-warning text-white">ุญูุธ</button>
                         </div>
 
                     </form>
@@ -171,7 +171,7 @@
             </div>
         </div>
 
-        {{-- ====================== ใๆฯวแ ำฬแ วแอวแวส ====================== --}}
+        {{-- ู…ูุฏุงู ุณุฌู ุงูุญุงูุงุช --}}
         <div class="modal fade" id="historyModal" tabindex="-1">
             <div class="modal-dialog modal-lg">
                 <div class="modal-content">
@@ -179,24 +179,24 @@
                     <div class="modal-header bg-dark text-white">
                         <h5 class="modal-title">
                             <i class="fas fa-history me-2"></i>
-                            ำฬแ วแสÛํํัวส
+                            ุณุฌู ุงูุชุบููุฑุงุช
                         </h5>
                         <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                     </div>
 
                     <div class="modal-body">
-                        <div id="historyBody">สอใํแ...</div>
+                        <div id="historyBody">ุชุญู…ูู...</div>
                     </div>
 
                     <div class="modal-footer">
-                        <button class="btn btn-secondary" data-bs-dismiss="modal">ลÛแวÞ</button>
+                        <button class="btn btn-secondary" data-bs-dismiss="modal">ุฅุบูุงู</button>
                     </div>
 
                 </div>
             </div>
         </div>
 
-        {{-- ====================== ใๆฯวแ วแอะÝ ====================== --}}
+        {{-- ู…ูุฏุงู ุงูุญุฐู --}}
         <div class="modal fade" id="deleteModal" tabindex="-1">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -208,17 +208,17 @@
                         <div class="modal-header bg-danger text-white">
                             <h5 class="modal-title">
                                 <i class="fas fa-trash me-2"></i>
-                                อะÝ วแุแศ
+                                ุญุฐู ุงูุทูุจ
                             </h5>
                             <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                         </div>
 
                         <div class="modal-body">
-                            <p>ๅแ รไส ใสร฿ฯ รไ฿ สัํฯ อะÝ ๅะว วแุแศฟ</p>
+                            <p>ูู ุฃูุช ู…ุชุฃูุฏ ุฃูู ุชุฑูุฏ ุญุฐู ูุฐุง ุงูุทูุจุ</p>
                         </div>
 
                         <div class="modal-footer bg-light">
-                            <button class="btn btn-danger">อะÝ วแยไ</button>
+                            <button class="btn btn-danger">ุญุฐู ุงูุขู</button>
                         </div>
 
                     </form>
@@ -226,7 +226,7 @@
             </div>
         </div>
 
-        {{-- ====================== ใๆฯวแ ลไิวม ุแศ ฬฯํฯ ====================== --}}
+        {{-- ู…ูุฏุงู ุฅูุดุงุก ุทูุจ ุฌุฏูุฏ --}}
         <div class="modal fade" id="createRequestModal" tabindex="-1">
             <div class="modal-dialog modal-lg">
                 <div class="modal-content">
@@ -237,7 +237,7 @@
                         <div class="modal-header bg-primary text-white">
                             <h5 class="modal-title">
                                 <i class="fas fa-plus me-2"></i>
-                                ลึวÝษ ุแศ ฯใ ฬฯํฯ
+                                ุฅุถุงูุฉ ุทูุจ ุฏู… ุฌุฏูุฏ
                             </h5>
                             <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                         </div>
@@ -246,25 +246,25 @@
                             <div class="row g-3">
 
                                 <div class="col-md-6">
-                                    <label class="form-label">วแใัํึ</label>
+                                    <label class="form-label">ุงูู…ุฑูุถ</label>
                                     <input type="text" name="patient_name" class="form-control" required>
                                 </div>
 
                                 <div class="col-md-3">
-                                    <label class="form-label">วแฺใั</label>
+                                    <label class="form-label">ุงูุนู…ุฑ</label>
                                     <input type="number" name="patient_age" class="form-control" min="1" required>
                                 </div>
 
                                 <div class="col-md-3">
-                                    <label class="form-label">วแฬไำ</label>
+                                    <label class="form-label">ุงูุฌูุณ</label>
                                     <select name="patient_gender" class="form-select" required>
-                                        <option value="M">ะ฿ั</option>
-                                        <option value="F">รไห์</option>
+                                        <option value="M">ุฐูุฑ</option>
+                                        <option value="F">ุฃูุซู</option>
                                     </select>
                                 </div>
 
                                 <div class="col-md-6">
-                                    <label class="form-label">วแใำสิÝ์</label>
+                                    <label class="form-label">ุงูู…ุณุชุดูู</label>
                                     <select name="hospital_id" class="form-select" required>
                                         @foreach($hospitals as $h)
                                             <option value="{{ $h->id }}">{{ $h->name }}</option>
@@ -273,7 +273,7 @@
                                 </div>
 
                                 <div class="col-md-3">
-                                    <label class="form-label">วแÝีํแษ</label>
+                                    <label class="form-label">ุงููุตููุฉ</label>
                                     <select name="blood_type" class="form-select" required>
                                         <option>O+</option><option>O-</option>
                                         <option>A+</option><option>A-</option>
@@ -283,26 +283,26 @@
                                 </div>
 
                                 <div class="col-md-3">
-                                    <label class="form-label">วแๆอฯวส</label>
+                                    <label class="form-label">ุงููุญุฏุงุช</label>
                                     <input type="number" name="units_requested" class="form-control" min="1" required>
                                 </div>
 
                                 <div class="col-md-4">
-                                    <label class="form-label">วแรๆแๆํษ</label>
+                                    <label class="form-label">ุงูุฃููููุฉ</label>
                                     <select name="priority" class="form-select" required>
-                                        <option value="normal">ฺวฯํ</option>
-                                        <option value="urgent">ฺวฬแ</option>
-                                        <option value="critical">อัฬ</option>
+                                        <option value="normal">ุนุงุฏู</option>
+                                        <option value="urgent">ุนุงุฌู</option>
+                                        <option value="critical">ุญุฑุฌ</option>
                                     </select>
                                 </div>
 
                                 <div class="col-md-8">
-                                    <label class="form-label">วแสิฮํี</label>
+                                    <label class="form-label">ุงูุชุดุฎูุต</label>
                                     <input type="text" name="diagnosis" class="form-control">
                                 </div>
 
                                 <div class="col-md-12">
-                                    <label class="form-label">ใแวอูวส ลึวÝํษ</label>
+                                    <label class="form-label">ู…ูุงุญุธุงุช ุฅุถุงููุฉ</label>
                                     <textarea name="notes" class="form-control"></textarea>
                                 </div>
 
@@ -310,8 +310,8 @@
                         </div>
 
                         <div class="modal-footer bg-light">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ลแÛวม</button>
-                            <button type="submit" class="btn btn-primary">อÝู</button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ุฅูุบุงุก</button>
+                            <button type="submit" class="btn btn-primary">ุญูุธ</button>
                         </div>
 
                     </form>
@@ -323,17 +323,12 @@
     </div>
 </main>
 
-{{-- ================================================================= --}}
-{{-- =================== JavaScript Section ============================ --}}
-{{-- ================================================================= --}}
 @push('scripts')
 <script>
-    // ศอห ศำํุ ฯวฮแ วแฬฯๆแ
-function openCreateModal() {
+    function openCreateModal() {
         new bootstrap.Modal(document.getElementById('createRequestModal')).show();
     }
 
-    // ฺัึ สÝวีํแ วแุแศ
     function viewRequest(id) {
         fetch(`/admin/blood-requests/${id}/json`)
             .then(res => res.json())
@@ -341,24 +336,23 @@ function openCreateModal() {
                 const isHospital = req.requester && req.requester.role === 'hospital';
 
                 document.getElementById('viewType').innerText =
-                    isHospital ? "ุแศ ใไ ใำสิÝ์" : "ุแศ ใไ ใำสฮฯใ";
+                    isHospital ? "ุทูุจ ู…ู ู…ุณุชุดูู" : "ุทูุจ ู…ู ู…ุณุชุฎุฏู…";
 
-                document.getElementById('viewStatus').innerText    = req.status ?? '—';
-                document.getElementById('viewHospital').innerText  = (req.hospital && req.hospital.name) ? req.hospital.name : '—';
+                document.getElementById('viewStatus').innerText    = req.status ?? '-';
+                document.getElementById('viewHospital').innerText  = (req.hospital && req.hospital.name) ? req.hospital.name : '-';
                 document.getElementById('viewBlood').innerText     = `${req.blood_type ?? ''} / ${req.units_requested ?? 0}`;
-                document.getElementById('viewPatientName').innerText   = req.patient_name ?? '—';
-                document.getElementById('viewPatientAge').innerText    = req.patient_age ?? '—';
-                document.getElementById('viewPatientGender').innerText = req.patient_gender ?? '—';
-                document.getElementById('viewDoctor').innerText        = req.doctor_name ?? '—';
-                document.getElementById('viewDiag').innerText          = req.diagnosis ?? '—';
-                document.getElementById('viewNotes').innerText         = req.notes ?? '—';
+                document.getElementById('viewPatientName').innerText   = req.patient_name ?? '-';
+                document.getElementById('viewPatientAge').innerText    = req.patient_age ?? '-';
+                document.getElementById('viewPatientGender').innerText = req.patient_gender ?? '-';
+                document.getElementById('viewDoctor').innerText        = req.doctor_name ?? '-';
+                document.getElementById('viewDiag').innerText          = req.diagnosis ?? '-';
+                document.getElementById('viewNotes').innerText         = req.notes ?? '-';
 
                 new bootstrap.Modal(document.getElementById('viewRequestModal')).show();
             })
-            .catch(() => alert('อฯห ฮุร รหไวม ฬแศ ศํวไวส วแุแศ'));
+            .catch(() => alert('ุญุฏุซ ุฎุทุฃ ุฃุซูุงุก ุฌูุจ ุจูุงูุงุช ุงูุทูุจ'));
     }
 
-    // Ýสอ ใๆฯวแ สฺฯํแ วแุแศ ใฺ สฺศฦษ วแศํวไวส
     function editRequest(id) {
         fetch(`/admin/blood-requests/${id}/json`)
             .then(res => res.json())
@@ -372,10 +366,9 @@ function openCreateModal() {
 
                 new bootstrap.Modal(document.getElementById('editRequestModal')).show();
             })
-            .catch(() => alert('อฯห ฮุร รหไวม ฬแศ ศํวไวส วแุแศ'));
+            .catch(() => alert('ุญุฏุซ ุฎุทุฃ ุฃุซูุงุก ุฌูุจ ุจูุงูุงุช ุงูุทูุจ'));
     }
 
-    // Ýสอ ใๆฯวแ สฺฯํแ วแอวแษ
     function editStatus(id, currentStatus) {
         document.getElementById('editStatusSelect').value = currentStatus;
         document.getElementById('editStatusForm').action  =
@@ -384,7 +377,6 @@ function openCreateModal() {
         new bootstrap.Modal(document.getElementById('editStatusModal')).show();
     }
 
-    // Ýสอ ใๆฯวแ วแอะÝ
     function deleteRequest(id) {
         document.getElementById('deleteForm').action =
             `/admin/blood-requests/${id}`;
@@ -392,7 +384,6 @@ function openCreateModal() {
         new bootstrap.Modal(document.getElementById('deleteModal')).show();
     }
 
-    // สอใํแ ำฬแ วแอวแวส ๆฺัึๅ Ýํ วแใๆฯวแ
     function loadHistory(id) {
         fetch(`/admin/blood-requests/${id}/history`)
             .then(res => res.text())
@@ -400,10 +391,8 @@ function openCreateModal() {
                 document.getElementById('historyBody').innerHTML = html;
                 new bootstrap.Modal(document.getElementById('historyModal')).show();
             })
-            .catch(() => alert('สฺะั สอใํแ ำฬแ วแอวแวส'));
+            .catch(() => alert('ุชุนุฐุฑ ุชุญู…ูู ุณุฌู ุงูุญุงูุงุช'));
     }
 </script>
 @endpush
 @endsection
-
-
