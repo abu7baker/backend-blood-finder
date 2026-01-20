@@ -1,210 +1,13 @@
-๏ปฟ@extends('layouts.admin')
+@extends('layouts.admin')
 
-@section('title', 'ุฅุฏุงุฑุฉ ุทูุจุงุช ุงูุฏู…')
+@section('title', 'ลฯวัษ ุแศวส วแฯใ')
 
 @section('content')
 <main id="mainContent" class="main-content">
     <div class="content-wrapper">
 
-        {{-- ====================== ุงูุฅุญุตุงุฆูุงุช ====================== --}}
-        <div class="row g-4 mb-4">
+        @livewire('admin.blood-requests-table')
 
-            <div class="col-md-4">
-                <div class="stat-card">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <small class="text-muted">ุงูุทูุจุงุช ุงูุญุฑุฌุฉ</small>
-                            <h3 class="fw-bold text-danger">{{ $stats['critical'] ?? 0 }}</h3>
-                        </div>
-                        <div class="stat-icon bg-danger"><i class="fas fa-heart-pulse"></i></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-4">
-                <div class="stat-card">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <small class="text-muted">ููุฏ ุงูู…ุฑุงุฌุนุฉ</small>
-                            <h3 class="fw-bold text-warning">{{ $stats['pending'] ?? 0 }}</h3>
-                        </div>
-                        <div class="stat-icon bg-warning"><i class="fas fa-clock"></i></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-4">
-                <div class="stat-card">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <small class="text-muted">ู…ูุชู…ูุฉ</small>
-                            <h3 class="fw-bold text-success">{{ $stats['completed'] ?? 0 }}</h3>
-                        </div>
-                        <div class="stat-icon bg-success"><i class="fas fa-check-circle"></i></div>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-
-        {{-- ====================== ุงูุฌุฏูู ====================== --}}
-        <div class="card custom-card">
-
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5>
-                    <i class="fas fa-file-medical text-danger ms-2"></i>
-                    ุทูุจุงุช ุงูุฏู…
-                </h5>
-
-                <div class="d-flex gap-2">
-
-                    {{-- ุฒุฑ ุฅุถุงูุฉ ุทูุจ ุฌุฏูุฏ (ู…ูุฏุงู) --}}
-                    <button class="btn btn-primary btn-sm" onclick="openCreateModal()">
-                        <i class="fas fa-plus ms-2"></i> ุฅุถุงูุฉ ุทูุจ ุฌุฏูุฏ
-                    </button>
-
-                    {{-- ุงูููุงุชุฑ --}}
-                    <form method="GET" class="d-flex gap-2">
-                        <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
-                            <option value="all" {{ request('status') == 'all' ? 'selected' : '' }}>ูู ุงูุญุงูุงุช</option>
-                            <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>ููุฏ ุงูู…ุฑุงุฌุนุฉ</option>
-                            <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>ู…ูุจูู</option>
-                            <option value="in_progress">ุฌุงุฑู ุงูุชู…ุงู ุนู…ููุฉ ุงูุชุจุฑุน</option>
-                            <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>ู…ุฑููุถ</option>
-                            <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>ู…ูุชู…ู</option>
-                        </select>
-
-                        <select name="priority" class="form-select form-select-sm" onchange="this.form.submit()">
-                            <option value="all" {{ request('priority') == 'all' ? 'selected' : '' }}>ูู ุงูุฃููููุงุช</option>
-                            <option value="normal" {{ request('priority') == 'normal' ? 'selected' : '' }}>ุนุงุฏู</option>
-                            <option value="urgent" {{ request('priority') == 'urgent' ? 'selected' : '' }}>ุนุงุฌู</option>
-                            <option value="critical" {{ request('priority') == 'critical' ? 'selected' : '' }}>ุญุฑุฌ</option>
-                        </select>
-                    </form>
-                </div>
-            </div>
-
-            <div class="card-body">
-
-                <div class="mb-3">
-                    <input type="text" id="searchRequests" class="form-control" placeholder="๐” ุงูุจุญุซ...">
-                </div>
-
-                <div class="table-responsive">
-                    <table class="table data-table" id="requestsTable">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>ุงูุทุงูุจ / ุงูู…ุฑูุถ</th>
-                                <th>ุงูู…ุณุชุดูู</th>
-                                <th>ุงููุตููุฉ</th>
-                                <th>ุงููุญุฏุงุช</th>
-                                <th>ุงูุฃููููุฉ</th>
-                                <th>ุงูุญุงูุฉ</th>
-                                <th>ุชุงุฑูุฎ ุงูุทูุจ</th>
-                                <th>ุฅุฌุฑุงุกุงุช</th>
-                            </tr>
-                        </thead>
-
-                        <tbody>
-                            @forelse($requests as $req)
-                                <tr>
-                                    <td>{{ $loop->iteration }}</td>
-
-                                    <td>
-                                        <strong>
-                                            {{ $req->patient_name ?? ($req->requester->full_name ?? 'โ€”') }}
-                                        </strong>
-                                        <br>
-                                        <small class="text-muted">
-                                            {{ optional($req->requester)->role_id == '2' ? 'ุทูุจ ู…ู ู…ุณุชุดูู' : 'ุทูุจ ู…ู ู…ุณุชุฎุฏู…' }}
-                                        </small>
-                                    </td>
-
-                                    <td>{{ optional($req->hospital)->name ?? 'โ€”' }}</td>
-                                    <td>{{ $req->blood_type }}</td>
-                                    <td>{{ $req->units_requested }}</td>
-
-                                    <td>
-                                        @if($req->priority == 'critical')
-                                            <span class="badge bg-danger">ุญุฑุฌ</span>
-                                        @elseif($req->priority == 'urgent')
-                                            <span class="badge bg-warning text-dark">ุนุงุฌู</span>
-                                        @else
-                                            <span class="badge bg-secondary">ุนุงุฏู</span>
-                                        @endif
-                                    </td>
-
-                                    <td>
-                                        @if($req->status == 'pending')
-                                            <span class="badge bg-warning text-dark">ููุฏ ุงูู…ุฑุงุฌุนุฉ</span>
-                                        @elseif($req->status == 'approved')
-                                            <span class="badge bg-info text-dark">ู…ูุจูู</span>
-                                        @elseif($req->status == 'in_progress')
-                                            <span class="badge bg-primary">ุฌุงุฑู ุงูุชู…ุงู ุนู…ููุฉ ุงูุชุจุฑุน</span>
-                                        @elseif($req->status == 'rejected')
-                                            <span class="badge bg-danger">ู…ุฑููุถ</span>
-                                        @else
-                                            <span class="badge bg-success">ู…ูุชู…ู</span>
-                                        @endif
-                                    </td>
-
-                                    <td>{{ $req->created_at->format('Y-m-d') }}</td>
-
-                                    <td>
-                                        <div class="btn-group btn-group-sm">
-
-                                            {{-- ุชูุงุตูู --}}
-                                            <button class="btn btn-outline-primary"
-                                                    type="button"
-                                                    onclick="viewRequest({{ $req->id }})">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
-
-                                            {{-- ุชุนุฏูู --}}
-                                            <button class="btn btn-outline-success"
-                                                    type="button"
-                                                    onclick="editRequest({{ $req->id }})">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
-
-                                            {{-- ุญุงูุฉ --}}
-                                            <button class="btn btn-outline-warning"
-                                                    type="button"
-                                                    onclick="editStatus({{ $req->id }}, '{{ $req->status }}')">
-                                                <i class="fas fa-sync"></i>
-                                            </button>
-
-                                            {{-- ุณุฌู ุงูุญุงูุงุช --}}
-                                            <button class="btn btn-outline-dark"
-                                                    type="button"
-                                                    onclick="loadHistory({{ $req->id }})">
-                                                <i class="fas fa-history"></i>
-                                            </button>
-
-                                            {{-- ุญุฐู --}}
-                                            <button class="btn btn-outline-danger"
-                                                    type="button"
-                                                    onclick="deleteRequest({{ $req->id }})">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-
-                                        </div>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="9" class="text-center text-muted">ูุง ุชูุฌุฏ ุทูุจุงุช.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        {{-- ====================== ู…ูุฏุงู ุงูุชูุงุตูู ====================== --}}
         <div class="modal fade" id="viewRequestModal" tabindex="-1">
             <div class="modal-dialog modal-lg modal-dialog-centered">
                 <div class="modal-content rounded-4 shadow">
@@ -212,7 +15,7 @@
                     <div class="modal-header bg-primary text-white">
                         <h5 class="modal-title">
                             <i class="fas fa-info-circle me-2"></i>
-                            ุชูุงุตูู ุงูุทูุจ
+                            สÝวีํแ วแุแศ
                         </h5>
                         <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                     </div>
@@ -221,52 +24,52 @@
                         <div class="row g-3">
 
                             <div class="col-md-6">
-                                <label class="text-muted small">ููุน ุงูุทูุจ</label>
+                                <label class="text-muted small">ไๆฺ วแุแศ</label>
                                 <div id="viewType" class="fw-bold"></div>
                             </div>
 
                             <div class="col-md-6">
-                                <label class="text-muted small">ุงูุญุงูุฉ</label>
+                                <label class="text-muted small">วแอวแษ</label>
                                 <div id="viewStatus" class="fw-bold"></div>
                             </div>
 
                             <div class="col-md-6">
-                                <label class="text-muted small">ุงูู…ุณุชุดูู</label>
+                                <label class="text-muted small">วแใำสิÝ์</label>
                                 <div id="viewHospital" class="fw-bold"></div>
                             </div>
 
                             <div class="col-md-6">
-                                <label class="text-muted small">ุงููุตููุฉ / ุงููุญุฏุงุช</label>
+                                <label class="text-muted small">วแÝีํแษ / วแๆอฯวส</label>
                                 <div id="viewBlood" class="fw-bold"></div>
                             </div>
 
                             <div class="col-md-6">
-                                <label class="text-muted small">ุงุณู… ุงูู…ุฑูุถ</label>
+                                <label class="text-muted small">วำใ วแใัํึ</label>
                                 <div id="viewPatientName" class="fw-bold"></div>
                             </div>
 
                             <div class="col-md-3">
-                                <label class="text-muted small">ุงูุนู…ุฑ</label>
+                                <label class="text-muted small">วแฺใั</label>
                                 <div id="viewPatientAge" class="fw-bold"></div>
                             </div>
 
                             <div class="col-md-3">
-                                <label class="text-muted small">ุงูุฌูุณ</label>
+                                <label class="text-muted small">วแฬไำ</label>
                                 <div id="viewPatientGender" class="fw-bold"></div>
                             </div>
 
                             <div class="col-md-6">
-                                <label class="text-muted small">ุงุณู… ุงูุทุจูุจ</label>
+                                <label class="text-muted small">วำใ วแุศํศ</label>
                                 <div id="viewDoctor" class="fw-bold"></div>
                             </div>
 
                             <div class="col-md-6">
-                                <label class="text-muted small">ุงูุชุดุฎูุต</label>
+                                <label class="text-muted small">วแสิฮํี</label>
                                 <div id="viewDiag" class="fw-bold"></div>
                             </div>
 
                             <div class="col-12">
-                                <label class="text-muted small">ู…ูุงุญุธุงุช</label>
+                                <label class="text-muted small">ใแวอูวส</label>
                                 <div id="viewNotes" class="fw-bold"></div>
                             </div>
 
@@ -274,14 +77,14 @@
                     </div>
 
                     <div class="modal-footer bg-light">
-                        <button class="btn btn-secondary" data-bs-dismiss="modal">ุฅุบูุงู</button>
+                        <button class="btn btn-secondary" data-bs-dismiss="modal">ลÛแวÞ</button>
                     </div>
 
                 </div>
             </div>
         </div>
 
-        {{-- ====================== ู…ูุฏุงู ุชุนุฏูู ุงูุทูุจ ====================== --}}
+        {{-- ====================== ใๆฯวแ สฺฯํแ วแุแศ ====================== --}}
         <div class="modal fade" id="editRequestModal" tabindex="-1">
             <div class="modal-dialog modal-lg">
                 <div class="modal-content">
@@ -293,7 +96,7 @@
                         <div class="modal-header bg-success text-white">
                             <h5 class="modal-title">
                                 <i class="fas fa-edit me-2"></i>
-                                ุชุนุฏูู ุงูุทูุจ
+                                สฺฯํแ วแุแศ
                             </h5>
                             <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                         </div>
@@ -302,21 +105,21 @@
                             <div class="row g-3">
 
                                 <div class="col-md-6">
-                                    <label class="form-label">ุงููุญุฏุงุช ุงูู…ุทููุจุฉ</label>
+                                    <label class="form-label">วแๆอฯวส วแใุแๆศษ</label>
                                     <input type="number" name="units_requested" id="editUnits" class="form-control">
                                 </div>
 
                                 <div class="col-md-6">
-                                    <label class="form-label">ุงูุฃููููุฉ</label>
+                                    <label class="form-label">วแรๆแๆํษ</label>
                                     <select name="priority" id="editPriority" class="form-select">
-                                        <option value="normal">ุนุงุฏู</option>
-                                        <option value="urgent">ุนุงุฌู</option>
-                                        <option value="critical">ุญุฑุฌ</option>
+                                        <option value="normal">ฺวฯํ</option>
+                                        <option value="urgent">ฺวฬแ</option>
+                                        <option value="critical">อัฬ</option>
                                     </select>
                                 </div>
 
                                 <div class="col-md-12">
-                                    <label class="form-label">ู…ูุงุญุธุงุช</label>
+                                    <label class="form-label">ใแวอูวส</label>
                                     <textarea name="notes" id="editNotes" class="form-control"></textarea>
                                 </div>
 
@@ -324,7 +127,7 @@
                         </div>
 
                         <div class="modal-footer bg-light">
-                            <button type="submit" class="btn btn-success">ุญูุธ ุงูุชุนุฏููุงุช</button>
+                            <button type="submit" class="btn btn-success">อÝู วแสฺฯํแวส</button>
                         </div>
 
                     </form>
@@ -332,7 +135,7 @@
             </div>
         </div>
 
-        {{-- ====================== ู…ูุฏุงู ุชุบููุฑ ุงูุญุงูุฉ ====================== --}}
+        {{-- ====================== ใๆฯวแ สÛํํั วแอวแษ ====================== --}}
         <div class="modal fade" id="editStatusModal" tabindex="-1">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -343,24 +146,24 @@
                         <div class="modal-header bg-warning text-white">
                             <h5 class="modal-title">
                                 <i class="fas fa-sync me-2"></i>
-                                ุชุญุฏูุซ ุงูุญุงูุฉ
+                                สอฯํห วแอวแษ
                             </h5>
                             <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                         </div>
 
                         <div class="modal-body">
-                            <label class="form-label">ุงุฎุชุฑ ุงูุญุงูุฉ ุงูุฌุฏูุฏุฉ</label>
+                            <label class="form-label">วฮสั วแอวแษ วแฬฯํฯษ</label>
                             <select class="form-select" name="status" id="editStatusSelect" required>
-                                <option value="pending">ููุฏ ุงูู…ุฑุงุฌุนุฉ</option>
-                                <option value="approved">ู…ูุจูู</option>
-                                <option value="in_progress">ุฌุงุฑู ุงูุชู…ุงู ุนู…ููุฉ ุงูุชุจุฑุน</option>
-                                <option value="rejected">ู…ุฑููุถ</option>
-                                <option value="completed">ู…ูุชู…ู</option>
+                                <option value="pending">Þํฯ วแใัวฬฺษ</option>
+                                <option value="approved">ใÞศๆแ</option>
+                                <option value="in_progress">ฬวัํ ว฿สใวแ ฺใแํษ วแสศัฺ</option>
+                                <option value="rejected">ใัÝๆึ</option>
+                                <option value="completed">ใ฿สใแ</option>
                             </select>
                         </div>
 
                         <div class="modal-footer bg-light">
-                            <button type="submit" class="btn btn-warning text-white">ุญูุธ</button>
+                            <button type="submit" class="btn btn-warning text-white">อÝู</button>
                         </div>
 
                     </form>
@@ -368,7 +171,7 @@
             </div>
         </div>
 
-        {{-- ====================== ู…ูุฏุงู ุณุฌู ุงูุญุงูุงุช ====================== --}}
+        {{-- ====================== ใๆฯวแ ำฬแ วแอวแวส ====================== --}}
         <div class="modal fade" id="historyModal" tabindex="-1">
             <div class="modal-dialog modal-lg">
                 <div class="modal-content">
@@ -376,24 +179,24 @@
                     <div class="modal-header bg-dark text-white">
                         <h5 class="modal-title">
                             <i class="fas fa-history me-2"></i>
-                            ุณุฌู ุงูุชุบููุฑุงุช
+                            ำฬแ วแสÛํํัวส
                         </h5>
                         <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                     </div>
 
                     <div class="modal-body">
-                        <div id="historyBody">ุชุญู…ูู...</div>
+                        <div id="historyBody">สอใํแ...</div>
                     </div>
 
                     <div class="modal-footer">
-                        <button class="btn btn-secondary" data-bs-dismiss="modal">ุฅุบูุงู</button>
+                        <button class="btn btn-secondary" data-bs-dismiss="modal">ลÛแวÞ</button>
                     </div>
 
                 </div>
             </div>
         </div>
 
-        {{-- ====================== ู…ูุฏุงู ุงูุญุฐู ====================== --}}
+        {{-- ====================== ใๆฯวแ วแอะÝ ====================== --}}
         <div class="modal fade" id="deleteModal" tabindex="-1">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -405,17 +208,17 @@
                         <div class="modal-header bg-danger text-white">
                             <h5 class="modal-title">
                                 <i class="fas fa-trash me-2"></i>
-                                ุญุฐู ุงูุทูุจ
+                                อะÝ วแุแศ
                             </h5>
                             <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                         </div>
 
                         <div class="modal-body">
-                            <p>ูู ุฃูุช ู…ุชุฃูุฏ ุฃูู ุชุฑูุฏ ุญุฐู ูุฐุง ุงูุทูุจุ</p>
+                            <p>ๅแ รไส ใสร฿ฯ รไ฿ สัํฯ อะÝ ๅะว วแุแศฟ</p>
                         </div>
 
                         <div class="modal-footer bg-light">
-                            <button class="btn btn-danger">ุญุฐู ุงูุขู</button>
+                            <button class="btn btn-danger">อะÝ วแยไ</button>
                         </div>
 
                     </form>
@@ -423,7 +226,7 @@
             </div>
         </div>
 
-        {{-- ====================== ู…ูุฏุงู ุฅูุดุงุก ุทูุจ ุฌุฏูุฏ ====================== --}}
+        {{-- ====================== ใๆฯวแ ลไิวม ุแศ ฬฯํฯ ====================== --}}
         <div class="modal fade" id="createRequestModal" tabindex="-1">
             <div class="modal-dialog modal-lg">
                 <div class="modal-content">
@@ -434,7 +237,7 @@
                         <div class="modal-header bg-primary text-white">
                             <h5 class="modal-title">
                                 <i class="fas fa-plus me-2"></i>
-                                ุฅุถุงูุฉ ุทูุจ ุฏู… ุฌุฏูุฏ
+                                ลึวÝษ ุแศ ฯใ ฬฯํฯ
                             </h5>
                             <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                         </div>
@@ -443,25 +246,25 @@
                             <div class="row g-3">
 
                                 <div class="col-md-6">
-                                    <label class="form-label">ุงูู…ุฑูุถ</label>
+                                    <label class="form-label">วแใัํึ</label>
                                     <input type="text" name="patient_name" class="form-control" required>
                                 </div>
 
                                 <div class="col-md-3">
-                                    <label class="form-label">ุงูุนู…ุฑ</label>
+                                    <label class="form-label">วแฺใั</label>
                                     <input type="number" name="patient_age" class="form-control" min="1" required>
                                 </div>
 
                                 <div class="col-md-3">
-                                    <label class="form-label">ุงูุฌูุณ</label>
+                                    <label class="form-label">วแฬไำ</label>
                                     <select name="patient_gender" class="form-select" required>
-                                        <option value="M">ุฐูุฑ</option>
-                                        <option value="F">ุฃูุซู</option>
+                                        <option value="M">ะ฿ั</option>
+                                        <option value="F">รไห์</option>
                                     </select>
                                 </div>
 
                                 <div class="col-md-6">
-                                    <label class="form-label">ุงูู…ุณุชุดูู</label>
+                                    <label class="form-label">วแใำสิÝ์</label>
                                     <select name="hospital_id" class="form-select" required>
                                         @foreach($hospitals as $h)
                                             <option value="{{ $h->id }}">{{ $h->name }}</option>
@@ -470,7 +273,7 @@
                                 </div>
 
                                 <div class="col-md-3">
-                                    <label class="form-label">ุงููุตููุฉ</label>
+                                    <label class="form-label">วแÝีํแษ</label>
                                     <select name="blood_type" class="form-select" required>
                                         <option>O+</option><option>O-</option>
                                         <option>A+</option><option>A-</option>
@@ -480,26 +283,26 @@
                                 </div>
 
                                 <div class="col-md-3">
-                                    <label class="form-label">ุงููุญุฏุงุช</label>
+                                    <label class="form-label">วแๆอฯวส</label>
                                     <input type="number" name="units_requested" class="form-control" min="1" required>
                                 </div>
 
                                 <div class="col-md-4">
-                                    <label class="form-label">ุงูุฃููููุฉ</label>
+                                    <label class="form-label">วแรๆแๆํษ</label>
                                     <select name="priority" class="form-select" required>
-                                        <option value="normal">ุนุงุฏู</option>
-                                        <option value="urgent">ุนุงุฌู</option>
-                                        <option value="critical">ุญุฑุฌ</option>
+                                        <option value="normal">ฺวฯํ</option>
+                                        <option value="urgent">ฺวฬแ</option>
+                                        <option value="critical">อัฬ</option>
                                     </select>
                                 </div>
 
                                 <div class="col-md-8">
-                                    <label class="form-label">ุงูุชุดุฎูุต</label>
+                                    <label class="form-label">วแสิฮํี</label>
                                     <input type="text" name="diagnosis" class="form-control">
                                 </div>
 
                                 <div class="col-md-12">
-                                    <label class="form-label">ู…ูุงุญุธุงุช ุฅุถุงููุฉ</label>
+                                    <label class="form-label">ใแวอูวส ลึวÝํษ</label>
                                     <textarea name="notes" class="form-control"></textarea>
                                 </div>
 
@@ -507,8 +310,8 @@
                         </div>
 
                         <div class="modal-footer bg-light">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ุฅูุบุงุก</button>
-                            <button type="submit" class="btn btn-primary">ุญูุธ</button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ลแÛวม</button>
+                            <button type="submit" class="btn btn-primary">อÝู</button>
                         </div>
 
                     </form>
@@ -525,29 +328,12 @@
 {{-- ================================================================= --}}
 @push('scripts')
 <script>
-    // ุจุญุซ ุจุณูุท ุฏุงุฎู ุงูุฌุฏูู
-    document.addEventListener('DOMContentLoaded', function () {
-        const searchInput = document.getElementById('searchRequests');
-        const table       = document.getElementById('requestsTable');
-
-        if (searchInput && table) {
-            searchInput.addEventListener('keyup', function () {
-                const term = this.value.toLowerCase();
-                const rows = table.querySelectorAll('tbody tr');
-
-                rows.forEach(row => {
-                    row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none';
-                });
-            });
-        }
-    });
-
-    // ูุชุญ ู…ูุฏุงู ุฅูุดุงุก ุทูุจ ุฌุฏูุฏ
-    function openCreateModal() {
+    // ศอห ศำํุ ฯวฮแ วแฬฯๆแ
+function openCreateModal() {
         new bootstrap.Modal(document.getElementById('createRequestModal')).show();
     }
 
-    // ุนุฑุถ ุชูุงุตูู ุงูุทูุจ
+    // ฺัึ สÝวีํแ วแุแศ
     function viewRequest(id) {
         fetch(`/admin/blood-requests/${id}/json`)
             .then(res => res.json())
@@ -555,24 +341,24 @@
                 const isHospital = req.requester && req.requester.role === 'hospital';
 
                 document.getElementById('viewType').innerText =
-                    isHospital ? "ุทูุจ ู…ู ู…ุณุชุดูู" : "ุทูุจ ู…ู ู…ุณุชุฎุฏู…";
+                    isHospital ? "ุแศ ใไ ใำสิÝ์" : "ุแศ ใไ ใำสฮฯใ";
 
-                document.getElementById('viewStatus').innerText    = req.status ?? 'โ€”';
-                document.getElementById('viewHospital').innerText  = (req.hospital && req.hospital.name) ? req.hospital.name : 'โ€”';
+                document.getElementById('viewStatus').innerText    = req.status ?? '—';
+                document.getElementById('viewHospital').innerText  = (req.hospital && req.hospital.name) ? req.hospital.name : '—';
                 document.getElementById('viewBlood').innerText     = `${req.blood_type ?? ''} / ${req.units_requested ?? 0}`;
-                document.getElementById('viewPatientName').innerText   = req.patient_name ?? 'โ€”';
-                document.getElementById('viewPatientAge').innerText    = req.patient_age ?? 'โ€”';
-                document.getElementById('viewPatientGender').innerText = req.patient_gender ?? 'โ€”';
-                document.getElementById('viewDoctor').innerText        = req.doctor_name ?? 'โ€”';
-                document.getElementById('viewDiag').innerText          = req.diagnosis ?? 'โ€”';
-                document.getElementById('viewNotes').innerText         = req.notes ?? 'โ€”';
+                document.getElementById('viewPatientName').innerText   = req.patient_name ?? '—';
+                document.getElementById('viewPatientAge').innerText    = req.patient_age ?? '—';
+                document.getElementById('viewPatientGender').innerText = req.patient_gender ?? '—';
+                document.getElementById('viewDoctor').innerText        = req.doctor_name ?? '—';
+                document.getElementById('viewDiag').innerText          = req.diagnosis ?? '—';
+                document.getElementById('viewNotes').innerText         = req.notes ?? '—';
 
                 new bootstrap.Modal(document.getElementById('viewRequestModal')).show();
             })
-            .catch(() => alert('ุญุฏุซ ุฎุทุฃ ุฃุซูุงุก ุฌูุจ ุจูุงูุงุช ุงูุทูุจ'));
+            .catch(() => alert('อฯห ฮุร รหไวม ฬแศ ศํวไวส วแุแศ'));
     }
 
-    // ูุชุญ ู…ูุฏุงู ุชุนุฏูู ุงูุทูุจ ู…ุน ุชุนุจุฆุฉ ุงูุจูุงูุงุช
+    // Ýสอ ใๆฯวแ สฺฯํแ วแุแศ ใฺ สฺศฦษ วแศํวไวส
     function editRequest(id) {
         fetch(`/admin/blood-requests/${id}/json`)
             .then(res => res.json())
@@ -586,10 +372,10 @@
 
                 new bootstrap.Modal(document.getElementById('editRequestModal')).show();
             })
-            .catch(() => alert('ุญุฏุซ ุฎุทุฃ ุฃุซูุงุก ุฌูุจ ุจูุงูุงุช ุงูุทูุจ'));
+            .catch(() => alert('อฯห ฮุร รหไวม ฬแศ ศํวไวส วแุแศ'));
     }
 
-    // ูุชุญ ู…ูุฏุงู ุชุนุฏูู ุงูุญุงูุฉ
+    // Ýสอ ใๆฯวแ สฺฯํแ วแอวแษ
     function editStatus(id, currentStatus) {
         document.getElementById('editStatusSelect').value = currentStatus;
         document.getElementById('editStatusForm').action  =
@@ -598,7 +384,7 @@
         new bootstrap.Modal(document.getElementById('editStatusModal')).show();
     }
 
-    // ูุชุญ ู…ูุฏุงู ุงูุญุฐู
+    // Ýสอ ใๆฯวแ วแอะÝ
     function deleteRequest(id) {
         document.getElementById('deleteForm').action =
             `/admin/blood-requests/${id}`;
@@ -606,7 +392,7 @@
         new bootstrap.Modal(document.getElementById('deleteModal')).show();
     }
 
-    // ุชุญู…ูู ุณุฌู ุงูุญุงูุงุช ูุนุฑุถู ูู ุงูู…ูุฏุงู
+    // สอใํแ ำฬแ วแอวแวส ๆฺัึๅ Ýํ วแใๆฯวแ
     function loadHistory(id) {
         fetch(`/admin/blood-requests/${id}/history`)
             .then(res => res.text())
@@ -614,8 +400,10 @@
                 document.getElementById('historyBody').innerHTML = html;
                 new bootstrap.Modal(document.getElementById('historyModal')).show();
             })
-            .catch(() => alert('ุชุนุฐุฑ ุชุญู…ูู ุณุฌู ุงูุญุงูุงุช'));
+            .catch(() => alert('สฺะั สอใํแ ำฬแ วแอวแวส'));
     }
 </script>
 @endpush
 @endsection
+
+

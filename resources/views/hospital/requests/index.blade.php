@@ -1,170 +1,25 @@
-ï»¿@extends('hospital.layouts.hospital')
+@extends('hospital.layouts.hospital')
 
-@section('title', 'Ø·Ù„Ø¨Ø§Øª Ø§Ù„Ø¯Ù…')
+@section('title', 'ØáÈÇÊ ÇáÏã')
 
 @section('content')
     <main id="mainContent" class="main-content">
         <div class="content-wrapper">
 
-            {{-- ========================= Ø¥Ø­ØµØ§Ø¦ÙŠØ§Øª ========================= --}}
-            <div class="row g-4 mb-4">
+            @livewire('hospital.requests-table')
 
-                <div class="col-md-4">
-                    <div class="stat-card shadow-sm">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <small class="text-muted">Ø§Ù„Ø·Ù„Ø¨Ø§Øª Ø§Ù„Ø­Ø±Ø¬Ø©</small>
-                                <h3 class="fw-bold text-danger">{{ $stats['urgent'] ?? 0 }}</h3>
-                            </div>
-                            <div class="stat-icon bg-danger">
-                                <i class="fas fa-heart-pulse"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="stat-card shadow-sm">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <small class="text-muted">Ù‚ÙŠØ¯ Ø§Ù„Ù…Ø±Ø§Ø¬Ø¹Ø©</small>
-                                <h3 class="fw-bold text-warning">{{ $stats['pending'] ?? 0 }}</h3>
-                            </div>
-                            <div class="stat-icon bg-warning">
-                                <i class="fas fa-clock"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="stat-card shadow-sm">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <small class="text-muted">Ù…ÙƒØªÙ…Ù„Ø©</small>
-                                <h3 class="fw-bold text-success">{{ $stats['completed'] ?? 0 }}</h3>
-                            </div>
-                            <div class="stat-icon bg-success">
-                                <i class="fas fa-check-circle"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-
-            {{-- ========================= Ø¬Ø¯ÙˆÙ„ Ø§Ù„Ø·Ù„Ø¨Ø§Øª ========================= --}}
-            <div class="card custom-card shadow-sm">
-
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="fw-bold">
-                        <i class="fas fa-file-medical text-danger ms-2"></i>
-                        Ø·Ù„Ø¨Ø§Øª Ø§Ù„Ø¯Ù…
-                    </h5>
-                    <button class="btn btn-primary btn-sm" onclick="openCreateModal()">
-                        <i class="fas fa-plus ms-2"></i> Ø¥Ø¶Ø§ÙØ© Ø·Ù„Ø¨ Ø¬Ø¯ÙŠØ¯
-                    </button>
-                </div>
-
-
-                <div class="card-body">
-
-                    <div class="mb-3">
-                        <input type="text" id="searchBox" class="form-control" placeholder="ğŸ” Ø§Ù„Ø¨Ø­Ø« Ø¹Ù† Ø·Ù„Ø¨...">
-                    </div>
-
-                    <div class="table-responsive">
-                        <table class="table data-table table-hover" id="requestsTable">
-
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>Ø§Ù„Ù…Ø±ÙŠØ¶</th>
-                                    <th>Ø§Ù„ÙØµÙŠÙ„Ø©</th>
-                                    <th>Ø§Ù„ÙˆØ­Ø¯Ø§Øª</th>
-                                    <th>Ø§Ù„Ø£ÙˆÙ„ÙˆÙŠØ©</th>
-                                    <th>Ø§Ù„Ø­Ø§Ù„Ø©</th>
-                                    <th>ØªØ§Ø±ÙŠØ® Ø§Ù„Ø·Ù„Ø¨</th>
-                                    <th>Ø¥Ø¬Ø±Ø§Ø¡Ø§Øª</th>
-                                </tr>
-                            </thead>
-
-                            <tbody>
-                                @foreach ($requests as $req)
-                                    <tr>
-                                        <td>{{ $loop->iteration }}</td>
-
-                                        <td class="fw-bold">
-                                            @if($req->patient_name)
-                                                {{ $req->patient_name }}
-                                            @else
-                                                {{ $req->requester->full_name }}
-                                                <small class="text-muted">(Ù…Ù‚Ø¯Ù… Ø§Ù„Ø·Ù„Ø¨)</small>
-                                            @endif
-                                        </td>
-
-                                        <td><span class="badge bg-danger">{{ $req->blood_type }}</span></td>
-                                        <td>{{ $req->units_requested }}</td>
-
-                                        <td>
-                                            @if($req->priority == 'urgent')
-                                                <span class="badge bg-warning text-dark">Ø¹Ø§Ø¬Ù„</span>
-                                            @else
-                                                <span class="badge bg-secondary">Ø¹Ø§Ø¯ÙŠ</span>
-                                            @endif
-                                        </td>
-
-                                        <td>
-                                            @if($req->status == 'pending')
-                                                <span class="badge bg-warning text-dark">Ù‚ÙŠØ¯ Ø§Ù„Ù…Ø±Ø§Ø¬Ø¹Ø©</span>
-                                            @elseif($req->status == 'approved')
-                                                <span class="badge bg-info text-dark">Ù…Ù‚Ø¨ÙˆÙ„</span>
-                                            @elseif($req->status == 'in_progress')
-                                                <span class="badge bg-primary">Ø¬Ø§Ø±ÙŠ Ø§ÙƒØªÙ…Ø§Ù„ Ø¹Ù…Ù„ÙŠØ© Ø§Ù„ØªØ¨Ø±Ø¹</span>
-                                            @elseif($req->status == 'rejected')
-                                                <span class="badge bg-danger">Ù…Ø±ÙÙˆØ¶</span>
-                                            @else
-                                                <span class="badge bg-success">Ù…ÙƒØªÙ…Ù„</span>
-                                            @endif
-                                        </td>
-
-                                        <td>{{ $req->created_at->format('Y-m-d') }}</td>
-
-                                        <td>
-                                            <div class="btn-group btn-group-sm">
-                                                <button class="btn btn-outline-primary" onclick="viewRequest({{ $req->id }})">
-                                                    <i class="fas fa-eye"></i>
-                                                </button>
-
-                                                <button class="btn btn-outline-warning"
-                                                    onclick="openStatusModal({{ $req->id }}, '{{ $req->status }}')">
-                                                    <i class="fas fa-sync"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-
-                                    </tr>
-                                @endforeach
-                            </tbody>
-
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            {{-- ========================= Ù…ÙˆØ¯Ø§Ù„ Ø§Ù„ØªÙØ§ØµÙŠÙ„ ========================= --}}
             <div class="modal fade" id="viewModal">
                 <div class="modal-dialog modal-lg modal-dialog-centered">
                     <div class="modal-content rounded-4 shadow">
 
                         <div class="modal-header bg-primary text-white">
-                            <h5 class="modal-title">ØªÙØ§ØµÙŠÙ„ Ø§Ù„Ø·Ù„Ø¨</h5>
+                            <h5 class="modal-title">ÊİÇÕíá ÇáØáÈ</h5>
                             <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                         </div>
 
                         <div class="modal-body">
                             <div class="alert alert-info d-none" id="selfPatientNotice">
-                                Ø§Ù„Ù…Ø±ÙŠØ¶ Ù‡Ùˆ Ù†ÙØ³Ù‡ Ù…Ù‚Ø¯Ù… Ø§Ù„Ø·Ù„Ø¨.
+                                ÇáãÑíÖ åæ äİÓå ãŞÏã ÇáØáÈ.
                             </div>
 
                             <div class="row g-3">
@@ -196,7 +51,7 @@
                 </div>
             </div>
 
-            {{-- ========================= Ù…ÙˆØ¯Ø§Ù„ ØªØ­Ø¯ÙŠØ« Ø§Ù„Ø­Ø§Ù„Ø© ========================= --}}
+            {{-- ========================= ãæÏÇá ÊÍÏíË ÇáÍÇáÉ ========================= --}}
             <div class="modal fade" id="statusModal">
                 <div class="modal-dialog modal-dialog-centered">
                     <div class="modal-content">
@@ -205,23 +60,23 @@
                             @csrf
 
                             <div class="modal-header bg-warning text-white">
-                                <h5 class="modal-title">ØªØ­Ø¯ÙŠØ« Ø§Ù„Ø­Ø§Ù„Ø©</h5>
+                                <h5 class="modal-title">ÊÍÏíË ÇáÍÇáÉ</h5>
                                 <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                             </div>
 
                             <div class="modal-body">
                                 <input type="hidden" id="status_id">
                                 <select id="status_select" class="form-select">
-                                    <option value="pending">Ù‚ÙŠØ¯ Ø§Ù„Ù…Ø±Ø§Ø¬Ø¹Ø©</option>
-                                    <option value="approved">Ù…Ù‚Ø¨ÙˆÙ„</option>
-                                    <option value="in_progress">Ø¬Ø§Ø±ÙŠ Ø§ÙƒØªÙ…Ø§Ù„ Ø¹Ù…Ù„ÙŠØ© Ø§Ù„ØªØ¨Ø±Ø¹</option>
-                                    <option value="rejected">Ù…Ø±ÙÙˆØ¶</option>
-                                    <option value="completed">Ù…ÙƒØªÙ…Ù„</option>
+                                    <option value="pending">ŞíÏ ÇáãÑÇÌÚÉ</option>
+                                    <option value="approved">ãŞÈæá</option>
+                                    <option value="in_progress">ÌÇÑí ÇßÊãÇá ÚãáíÉ ÇáÊÈÑÚ</option>
+                                    <option value="rejected">ãÑİæÖ</option>
+                                    <option value="completed">ãßÊãá</option>
                                 </select>
                             </div>
 
                             <div class="modal-footer bg-light">
-                                <button class="btn btn-warning text-white w-100">Ø­ÙØ¸ Ø§Ù„ØªØ­Ø¯ÙŠØ«</button>
+                                <button class="btn btn-warning text-white w-100">ÍİÙ ÇáÊÍÏíË</button>
                             </div>
 
                         </form>
@@ -230,13 +85,13 @@
                 </div>
             </div>
 
-            {{-- ========================= Ù…ÙˆØ¯Ø§Ù„ Ø¥Ø¯Ø®Ø§Ù„ Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„Ù…Ø±ÙŠØ¶ ========================= --}}
+            {{-- ========================= ãæÏÇá ÅÏÎÇá ÈíÇäÇÊ ÇáãÑíÖ ========================= --}}
             @include('hospital.requests.patient-modal')
 
 
     
 
-            {{-- ====================== Ù…ÙˆØ¯Ø§Ù„ Ø¥Ù†Ø´Ø§Ø¡ Ø·Ù„Ø¨ Ø¯Ù… (Ø§Ù„Ù…Ø³ØªØ´ÙÙ‰) ====================== --}}
+            {{-- ====================== ãæÏÇá ÅäÔÇÁ ØáÈ Ïã (ÇáãÓÊÔİì) ====================== --}}
             <div class="modal fade" id="createRequestModal" tabindex="-1">
                 <div class="modal-dialog modal-lg">
                     <div class="modal-content">
@@ -247,7 +102,7 @@
                             <div class="modal-header bg-primary text-white">
                                 <h5 class="modal-title">
                                     <i class="fas fa-plus me-2"></i>
-                                    Ø¥Ù†Ø´Ø§Ø¡ Ø·Ù„Ø¨ Ø¯Ù…
+                                    ÅäÔÇÁ ØáÈ Ïã
                                 </h5>
                                 <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                             </div>
@@ -255,30 +110,30 @@
                             <div class="modal-body">
                                 <div class="row g-3">
 
-                                    {{-- Ø§Ø³Ù… Ø§Ù„Ù…Ø±ÙŠØ¶ --}}
+                                    {{-- ÇÓã ÇáãÑíÖ --}}
                                     <div class="col-md-6">
-                                        <label class="form-label">Ø§Ø³Ù… Ø§Ù„Ù…Ø±ÙŠØ¶</label>
+                                        <label class="form-label">ÇÓã ÇáãÑíÖ</label>
                                         <input type="text" name="patient_name" class="form-control" required>
                                     </div>
 
-                                    {{-- Ø§Ù„Ø¹Ù…Ø± --}}
+                                    {{-- ÇáÚãÑ --}}
                                     <div class="col-md-3">
-                                        <label class="form-label">Ø§Ù„Ø¹Ù…Ø±</label>
+                                        <label class="form-label">ÇáÚãÑ</label>
                                         <input type="number" name="patient_age" class="form-control" min="1" required>
                                     </div>
 
-                                    {{-- Ø§Ù„Ø¬Ù†Ø³ --}}
+                                    {{-- ÇáÌäÓ --}}
                                     <div class="col-md-3">
-                                        <label class="form-label">Ø§Ù„Ø¬Ù†Ø³</label>
+                                        <label class="form-label">ÇáÌäÓ</label>
                                         <select name="patient_gender" class="form-select" required>
-                                            <option value="M">Ø°ÙƒØ±</option>
-                                            <option value="F">Ø£Ù†Ø«Ù‰</option>
+                                            <option value="M">ĞßÑ</option>
+                                            <option value="F">ÃäËì</option>
                                         </select>
                                     </div>
 
-                                    {{-- ÙØµÙŠÙ„Ø© Ø§Ù„Ø¯Ù… --}}
+                                    {{-- İÕíáÉ ÇáÏã --}}
                                     <div class="col-md-3">
-                                        <label class="form-label">ÙØµÙŠÙ„Ø© Ø§Ù„Ø¯Ù…</label>
+                                        <label class="form-label">İÕíáÉ ÇáÏã</label>
                                         <select name="blood_type" class="form-select" required>
                                             <option>O+</option>
                                             <option>O-</option>
@@ -291,31 +146,31 @@
                                         </select>
                                     </div>
 
-                                    {{-- Ø§Ù„ÙˆØ­Ø¯Ø§Øª --}}
+                                    {{-- ÇáæÍÏÇÊ --}}
                                     <div class="col-md-3">
-                                        <label class="form-label">Ø¹Ø¯Ø¯ Ø§Ù„ÙˆØ­Ø¯Ø§Øª</label>
+                                        <label class="form-label">ÚÏÏ ÇáæÍÏÇÊ</label>
                                         <input type="number" name="units_requested" class="form-control" min="1" required>
                                     </div>
 
-                                    {{-- Ø§Ù„Ø£ÙˆÙ„ÙˆÙŠØ© --}}
+                                    {{-- ÇáÃæáæíÉ --}}
                                     <div class="col-md-3">
-                                        <label class="form-label">Ø§Ù„Ø£ÙˆÙ„ÙˆÙŠØ©</label>
+                                        <label class="form-label">ÇáÃæáæíÉ</label>
                                         <select name="priority" class="form-select" required>
-                                            <option value="normal">Ø¹Ø§Ø¯ÙŠ</option>
-                                            <option value="urgent">Ø¹Ø§Ø¬Ù„</option>
-                                            <option value="critical">Ø­Ø±Ø¬</option>
+                                            <option value="normal">ÚÇÏí</option>
+                                            <option value="urgent">ÚÇÌá</option>
+                                            <option value="critical">ÍÑÌ</option>
                                         </select>
                                     </div>
 
-                                    {{-- Ø§Ù„ØªØ´Ø®ÙŠØµ --}}
+                                    {{-- ÇáÊÔÎíÕ --}}
                                     <div class="col-md-9">
-                                        <label class="form-label">Ø§Ù„ØªØ´Ø®ÙŠØµ</label>
+                                        <label class="form-label">ÇáÊÔÎíÕ</label>
                                         <input type="text" name="diagnosis" class="form-control">
                                     </div>
 
-                                    {{-- Ù…Ù„Ø§Ø­Ø¸Ø§Øª --}}
+                                    {{-- ãáÇÍÙÇÊ --}}
                                     <div class="col-md-12">
-                                        <label class="form-label">Ù…Ù„Ø§Ø­Ø¸Ø§Øª Ø¥Ø¶Ø§ÙÙŠØ©</label>
+                                        <label class="form-label">ãáÇÍÙÇÊ ÅÖÇİíÉ</label>
                                         <textarea name="notes" class="form-control" rows="3"></textarea>
                                     </div>
 
@@ -324,10 +179,10 @@
 
                             <div class="modal-footer bg-light">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                                    Ø¥Ù„ØºØ§Ø¡
+                                    ÅáÛÇÁ
                                 </button>
                                 <button type="submit" class="btn btn-primary">
-                                    Ø­ÙØ¸ Ø§Ù„Ø·Ù„Ø¨
+                                    ÍİÙ ÇáØáÈ
                                 </button>
                             </div>
 
@@ -356,16 +211,8 @@
             new bootstrap.Modal(modalEl).show();
         }
 
-        /* ========================= Ø§Ù„Ø¨Ø­Ø« ========================= */
-        document.getElementById("searchBox").addEventListener("keyup", function () {
-            const term = this.value.toLowerCase();
-            document.querySelectorAll("#requestsTable tbody tr").forEach(row => {
-                row.style.display = row.innerText.toLowerCase().includes(term) ? "" : "none";
-            });
-        });
-
-        /* ========================= Ø¹Ø±Ø¶ Ø§Ù„ØªÙØ§ØµÙŠÙ„ ========================= */
-        function viewRequest(id) {
+        /* ========================= ÇáÈÍË ========================= */
+function viewRequest(id) {
             fetch(`/hospital/requests/show/${id}`)
                 .then(res => res.json())
                 .then(req => {
@@ -375,15 +222,15 @@
                         req.patient_name ?? req.requester.full_name;
 
                     document.getElementById("v_age").innerText =
-                        req.patient_age ?? req.requester.age ?? "â€”";
+                        req.patient_age ?? req.requester.age ?? "—";
 
                     document.getElementById("v_gender").innerText =
-                        req.patient_gender ?? req.requester.gender ?? "â€”";
+                        req.patient_gender ?? req.requester.gender ?? "—";
 
                     document.getElementById("v_blood").innerText = req.blood_type;
                     document.getElementById("v_units").innerText = req.units_requested;
-                    document.getElementById("v_diag").innerText = req.diagnosis ?? "â€”";
-                    document.getElementById("v_notes").innerText = req.notes ?? "Ù„Ø§ ØªÙˆØ¬Ø¯ Ù…Ù„Ø§Ø­Ø¸Ø§Øª";
+                    document.getElementById("v_diag").innerText = req.diagnosis ?? "—";
+                    document.getElementById("v_notes").innerText = req.notes ?? "áÇ ÊæÌÏ ãáÇÍÙÇÊ";
 
                     document.getElementById("selfPatientNotice")
                         .classList.toggle("d-none", !isSelf);
@@ -392,7 +239,7 @@
                 });
         }
 
-        /* ========================= ØªØºÙŠÙŠØ± Ø§Ù„Ø­Ø§Ù„Ø© ========================= */
+        /* ========================= ÊÛííÑ ÇáÍÇáÉ ========================= */
         function openStatusModal(id, status) {
             document.getElementById("status_id").value = id;
             document.getElementById("status_select").value = status;
@@ -403,7 +250,7 @@
             new bootstrap.Modal(document.getElementById("statusModal")).show();
         }
 
-        /* ========================= Ø£Ø¯ÙˆØ§Øª Ù…ÙˆØ¯Ø§Ù„ Ø§Ù„Ù…Ø±ÙŠØ¶ ========================= */
+        /* ========================= ÃÏæÇÊ ãæÏÇá ÇáãÑíÖ ========================= */
         let currentRequestId = null;
 
         function togglePatientRequired(enable) {
@@ -432,7 +279,7 @@
             const form = document.getElementById("patientForm");
             form.action = `/hospital/requests/${req.id}/patient-info`;
 
-            // Ø¥Ø²Ø§Ù„Ø© Ø£ÙŠ hidden Ù‚Ø¯ÙŠÙ…
+            // ÅÒÇáÉ Ãí hidden ŞÏíã
             const hidden = form.querySelector('[name="use_requester"]');
             if (hidden) hidden.remove();
 
@@ -464,7 +311,7 @@
             form.submit();
         }
 
-        /* ========================= Ø¥Ø±Ø³Ø§Ù„ Ø§Ù„Ø­Ø§Ù„Ø© ========================= */
+        /* ========================= ÅÑÓÇá ÇáÍÇáÉ ========================= */
         document.getElementById("statusForm").addEventListener("submit", function (e) {
             e.preventDefault();
 
@@ -495,3 +342,5 @@
         });
     </script>
 @endpush
+
+

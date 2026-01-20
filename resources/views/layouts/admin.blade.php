@@ -19,6 +19,7 @@
     {{-- CSS الخاص بلوحة التحكم --}}
     <link rel="stylesheet" href="{{ asset('assets/css/style.css') }}">
 
+    @livewireStyles
     @stack('styles')
 </head>
 <body class="bg-light">
@@ -256,6 +257,7 @@ Swal.fire({
 </script>
 @endif
 
+@livewireScripts
 @stack('scripts')
 </body>
 </html>

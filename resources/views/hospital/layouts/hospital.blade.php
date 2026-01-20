@@ -19,6 +19,7 @@
     {{-- Hospital Panel CSS --}}
     <link rel="stylesheet" href="{{ asset('assets/css/style.css') }}">
 
+    @livewireStyles
     @stack('styles')
 </head>
 
@@ -225,6 +226,8 @@ Swal.fire({
 });
 </script>
 @endif
+
+@livewireScripts
 
 @stack('scripts')
 </body>
