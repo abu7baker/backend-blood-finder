@@ -137,8 +137,15 @@
                     </div>
                 </div>
 
-                {{-- User Dropdown --}}
-                <div class="dropdown">
+                <div class="d-flex align-items-center gap-3">
+                    <livewire:hospital.notification-bell />
+
+                    <button class="btn btn-outline-secondary" id="themeToggleHeader" type="button" data-theme-toggle>
+                        <i class="fas fa-moon"></i>
+                    </button>
+
+                    {{-- User Dropdown --}}
+                    <div class="dropdown">
                     <button class="btn btn-light d-flex align-items-center gap-2" data-bs-toggle="dropdown">
                         <div class="avatar-sm">{{ mb_substr(auth()->user()->full_name, 0, 1) }}</div>
                         <span>{{ auth()->user()->full_name }}</span>
@@ -162,6 +169,7 @@
                                 <i class="fas fa-right-from-bracket me-2"></i> تسجيل الخروج
                             </button>
                         </form>
+                    </div>
                     </div>
                 </div>
 
@@ -228,6 +236,38 @@ Swal.fire({
 @endif
 
 @livewireScripts
+
+<script>
+document.addEventListener('livewire:init', () => {
+    Livewire.on('notification-arrived', (payload) => {
+        if (!payload || typeof Swal === 'undefined') {
+            return;
+        }
+
+        const count = Number(payload.count || 1);
+        const title = count > 1
+            ? `لديك ${count} إشعارات جديدة`
+            : (payload.title || 'إشعار جديد');
+
+        let text = payload.body || '';
+
+        if (count > 1 && text) {
+            text = `${text} (+${count - 1})`;
+        }
+
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'info',
+            title,
+            text,
+            showConfirmButton: false,
+            timer: 5000,
+            timerProgressBar: true,
+        });
+    });
+});
+</script>
 
 @stack('scripts')
 </body>

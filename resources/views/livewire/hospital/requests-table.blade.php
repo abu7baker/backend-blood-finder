@@ -1,4 +1,4 @@
-﻿<div wire:poll.10s>
+﻿<div wire:poll.3s>
     @unless($hasHospital)
         <div class="alert alert-danger mb-3">
             لا يمكن عرض الطلبات لأن الحساب غير مرتبط بمستشفى.
