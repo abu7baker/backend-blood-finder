@@ -2,31 +2,52 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
     public function up(): void
     {
-        $driver = Schema::getConnection()->getDriverName();
-        if ($driver !== 'mysql') {
-            return;
-        }
+        // حذف القيد القديم
+        DB::statement("
+            ALTER TABLE blood_requests
+            DROP CONSTRAINT IF EXISTS blood_requests_status_check
+        ");
 
-        DB::statement(
-            "ALTER TABLE blood_requests MODIFY status ENUM('pending','approved','in_progress','rejected','completed','cancelled') DEFAULT 'pending'"
-        );
+        // إضافة القيد الجديد مع in_progress
+        DB::statement("
+            ALTER TABLE blood_requests
+            ADD CONSTRAINT blood_requests_status_check
+            CHECK (
+                status IN (
+                    'pending',
+                    'approved',
+                    'in_progress',
+                    'completed',
+                    'cancelled'
+                )
+            )
+        ");
     }
 
     public function down(): void
     {
-        $driver = Schema::getConnection()->getDriverName();
-        if ($driver !== 'mysql') {
-            return;
-        }
+        // الرجوع للحالات القديمة
+        DB::statement("
+            ALTER TABLE blood_requests
+            DROP CONSTRAINT IF EXISTS blood_requests_status_check
+        ");
 
-        DB::statement(
-            "ALTER TABLE blood_requests MODIFY status ENUM('pending','approved','rejected','completed','cancelled') DEFAULT 'pending'"
-        );
+        DB::statement("
+            ALTER TABLE blood_requests
+            ADD CONSTRAINT blood_requests_status_check
+            CHECK (
+                status IN (
+                    'pending',
+                    'approved',
+                    'completed',
+                    'cancelled'
+                )
+            )
+        ");
     }
 };
