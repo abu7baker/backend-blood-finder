@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Appointment;
 use App\Models\Hospital;
 use App\Models\User;
-use App\Models\Notification; // ✅ إضافة مهمة
+use App\Models\Notification;
 use App\Services\FCMService;
 
 class AppointmentController extends Controller

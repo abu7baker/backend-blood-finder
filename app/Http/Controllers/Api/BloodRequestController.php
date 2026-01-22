@@ -210,7 +210,7 @@ class BloodRequestController extends Controller
      ===================================================== */
     private function notifyEligibleDonors(BloodRequest $request)
     {
-        // ملاحظة: كما هو في كودك (لم أغير المنطق)
+       
         $hospital = User::findOrFail($request->hospital_id);
 
         $donors = User::eligibleDonors()
@@ -341,7 +341,7 @@ class BloodRequestController extends Controller
 
                 $donor = Auth::user();
 
-                // ✅ إشعار المستشفى (تصحيح الهدف فقط)
+                // ✅ إشعار المستشفى 
                 $hospitalUser = $this->hospitalUserFromRequest($bloodRequest);
 
                 if ($hospitalUser) {
@@ -404,7 +404,7 @@ class BloodRequestController extends Controller
     }
 
     /* =====================================================
-     | 🏥 جلب حساب المستشفى الصحيح من الطلب
+     |  جلب حساب المستشفى الصحيح من الطلب
      | يدعم حالتين:
      | 1) hospital_id يشير إلى hospitals.id  -> نأخذ hospitals.user_id
      | 2) hospital_id يشير إلى users.id      -> نستخدمه مباشرة
