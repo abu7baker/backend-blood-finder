@@ -107,8 +107,6 @@ class HomePageController extends Controller
                 'lives_saved'     => $livesSaved,
             ],
 
-            // الحملات
-            'campaigns' => $campaigns,
 
             // آخر التبرعات
             'last_donations' => $lastDonations,

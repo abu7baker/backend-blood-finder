@@ -43,10 +43,10 @@ class Hospital extends Model
         return $this->hasMany(BloodStock::class);
     }
 
-    public function campaigns()
-    {
-        return $this->hasMany(Campaign::class);
-    }
+    // public function campaigns()
+    // {
+    //     return $this->hasMany(Campaign::class);
+    // }
 
     /* Scopes */
 

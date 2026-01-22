@@ -264,84 +264,116 @@ class BloodRequestController extends Controller
     /* =====================================================
      | ✅❌ رد المتبرع
      ===================================================== */
-    public function respondToRequest(Request $request, $id)
-    {
-        $request->validate([
-            'response' => 'required|in:accepted,unavailable',
-        ]);
+   public function respondToRequest(Request $request, $id)
+{
+    // ==============================
+    // ✅ Validation
+    // ==============================
+    $request->validate([
+        'response' => 'required|in:accepted,unavailable',
+    ]);
 
-        if ((int)Auth::user()->role_id !== 3) {
-            return response()->json([
-                'success' => false,
-                'message' => 'غير مصرح لك بتنفيذ هذا الإجراء'
-            ], 403);
-        }
+    // ==============================
+    // 🔐 Authorization (Donor only)
+    // ==============================
+    if ((int) Auth::user()->role_id !== 3) {
+        return response()->json([
+            'success' => false,
+            'message' => 'غير مصرح لك بتنفيذ هذا الإجراء'
+        ], 403);
+    }
 
-        return DB::transaction(function () use ($request, $id) {
+    try {
 
+        // ==============================
+        // 🔄 Transaction
+        // ==============================
+        $result = DB::transaction(function () use ($request, $id) {
+
+            // 🔒 قفل الطلب
             $bloodRequest = BloodRequest::lockForUpdate()->find($id);
 
             if (!$bloodRequest) {
-                return response()->json([
-                    'success' => false,
+                return [
+                    'status' => 404,
                     'message' => 'هذا الطلب لم يعد متاحًا'
-                ], 404);
+                ];
             }
 
+            // ❌ مكتمل
             if ($bloodRequest->status === 'completed') {
-                return response()->json([
-                    'success' => false,
+                return [
+                    'status' => 409,
                     'message' => 'تمت الموافقة من قبل متبرع آخر، شكرًا لك 🌸'
-                ], 409);
+                ];
             }
 
+            // ❌ غير معتمد
             if ($bloodRequest->status !== 'approved') {
-                return response()->json([
-                    'success' => false,
+                return [
+                    'status' => 409,
                     'message' => 'هذا الطلب غير متاح حالياً'
-                ], 409);
+                ];
             }
 
+            // 🔒 قفل pivot
             $pivot = RequestUser::where('blood_request_id', $id)
                 ->where('user_id', Auth::id())
                 ->lockForUpdate()
                 ->first();
 
             if (!$pivot) {
-                return response()->json([
-                    'success' => false,
+                return [
+                    'status' => 409,
                     'message' => 'لم يتم توجيه هذا الطلب إليك'
-                ], 409);
+                ];
             }
 
             if ($pivot->status !== 'pending') {
-                return response()->json([
-                    'success' => false,
+                return [
+                    'status' => 409,
                     'message' => 'تم تسجيل ردك مسبقًا ✔'
-                ], 409);
+                ];
             }
 
-            // ✔ قبول
-            $oldStatus = $bloodRequest->status;
-
+            // ==============================
+            // ✔️ قبول الطلب
+            // ==============================
             if ($request->response === 'accepted') {
 
+                $oldStatus = $bloodRequest->status;
+
+                // تحديث pivot
                 $pivot->update([
                     'status'       => 'accepted',
                     'responded_at' => now(),
                 ]);
 
-                $bloodRequest->update(['status' => 'in_progress']);
-                $this->logStatus($bloodRequest, $oldStatus, 'in_progress', Auth::id());
+                // تحديث الطلب
+                $bloodRequest->update([
+                    'status' => 'in_progress'
+                ]);
 
+                // تسجيل التاريخ
+                $this->logStatus(
+                    $bloodRequest,
+                    $oldStatus,
+                    'in_progress',
+                    Auth::id()
+                );
+
+                // رفض بقية المتبرعين
                 RequestUser::where('blood_request_id', $id)
                     ->where('user_id', '!=', Auth::id())
                     ->where('status', 'pending')
-                    ->update(['status' => 'unavailable']);
+                    ->update([
+                        'status' => 'unavailable'
+                    ]);
 
+                // ==============================
+                // 🔔 إشعار المستشفى (آمن)
+                // ==============================
                 $donor = Auth::user();
-
-                // ✅ إشعار المستشفى 
                 $hospitalUser = $this->hospitalUserFromRequest($bloodRequest);
 
                 if ($hospitalUser) {
@@ -355,24 +387,52 @@ class BloodRequestController extends Controller
                     ]);
                 }
 
-                return response()->json([
-                    'success' => true,
+                return [
+                    'status' => 200,
                     'message' => 'تم قبولك كمتبرع ❤️ سيتم التواصل معك قريبًا.'
-                ]);
+                ];
             }
 
+            // ==============================
             // ❌ غير متاح
+            // ==============================
             $pivot->update([
                 'status'       => 'unavailable',
                 'responded_at' => now(),
             ]);
 
-            return response()->json([
-                'success' => true,
+            return [
+                'status' => 200,
                 'message' => 'شكرًا لك، تم تسجيل عدم توفرك 🌷'
-            ]);
+            ];
         });
+
+        // ==============================
+        // ✅ Final Response
+        // ==============================
+        return response()->json([
+            'success' => $result['status'] === 200,
+            'message' => $result['message']
+        ], $result['status']);
+
+    } catch (\Throwable $e) {
+
+        // ==============================
+        // ❌ Catch any unexpected error
+        // ==============================
+        \Log::error('RespondToRequest Error', [
+            'error' => $e->getMessage(),
+            'request_id' => $id,
+            'user_id' => Auth::id(),
+        ]);
+
+        return response()->json([
+            'success' => false,
+            'message' => 'حدث خطأ داخلي في الخادم'
+        ], 500);
     }
+}
+
 
     /* =====================================================
      | 📝 تسجيل تغيير الحالة
@@ -409,15 +469,15 @@ class BloodRequestController extends Controller
      | 1) hospital_id يشير إلى hospitals.id  -> نأخذ hospitals.user_id
      | 2) hospital_id يشير إلى users.id      -> نستخدمه مباشرة
      ===================================================== */
-    private function hospitalUserFromRequest(BloodRequest $bloodRequest): ?User
-    {
-        // الحالة (1): hospital_id = hospitals.id
-        $hospital = Hospital::find($bloodRequest->hospital_id);
-        if ($hospital && !empty($hospital->user_id)) {
-            return User::find($hospital->user_id);
-        }
+   private function hospitalUserFromRequest(BloodRequest $bloodRequest): ?User
+{
+    $hospital = Hospital::with('user')->find($bloodRequest->hospital_id);
 
-        // الحالة (2): hospital_id = users.id
-        return User::find($bloodRequest->hospital_id);
+    if (!$hospital) {
+        return null;
     }
+
+    return $hospital->user;
+}
+
 }
