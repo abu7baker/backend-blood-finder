@@ -22,7 +22,7 @@
                         <div class="col-md-6">
                             <label>المدينة</label>
                             <select name="city" class="form-select">
-                                <option value="">???? ????????</option>
+                                <option value="">اختار المدينة</option>
                                 @include('partials.yemen-governorates-options', ['selected' => old('city')])
                             </select>
                         </div>
