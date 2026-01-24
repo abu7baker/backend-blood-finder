@@ -31,9 +31,10 @@
             <th>نوع التبرع</th>
             <td>
                 @if(($donation->source === 'blood_request') || $donation->request_id)
-                    <span class="badge bg-primary">
+                    <a class="badge bg-primary text-decoration-none"
+                       href="{{ route('admin.requests.index', ['open_request' => $donation->request_id]) }}">
                         تبرع عبر موافقة على طلب دم (رقم الطلب: #{{ $donation->request_id }})
-                    </span>
+                    </a>
                 @elseif($donation->source === 'appointment')
                     <span class="badge bg-info text-dark">
                         تبرع عبر موعد في المستشفى

@@ -393,6 +393,16 @@
             })
             .catch(() => alert('تعذر تحميل سجل الحالات'));
     }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const params = new URLSearchParams(window.location.search);
+        const requestId = params.get('open_request');
+        if (!requestId) return;
+
+        setTimeout(() => {
+            viewRequest(requestId);
+        }, 200);
+    });
 </script>
 @endpush
 @endsection

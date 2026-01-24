@@ -137,9 +137,10 @@
                                                 {{-- نوع التبرع --}}
                                     <td>
                                         @if(($d->source === 'blood_request') || $d->request_id)
-                                            <span class="badge bg-primary">
+                                            <a class="badge bg-primary text-decoration-none"
+                                               href="{{ route('admin.requests.index', ['open_request' => $d->request_id]) }}">
                                                 عبر موافقة على طلب دم (#{{ $d->request_id }})
-                                            </span>
+                                            </a>
                                         @elseif($d->source === 'appointment')
                                             <span class="badge bg-info text-dark">
                                                 عبر موعد تبرع
