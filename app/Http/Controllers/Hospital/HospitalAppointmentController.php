@@ -112,6 +112,7 @@ class HospitalAppointmentController extends Controller
                     'units_donated' => 1,
                     'donated_at'    => now(),
                     'status'        => 'completed',
+                    'source'        => 'appointment',
                 ]);
 
                 // 📝 سجل نشاط إضافي

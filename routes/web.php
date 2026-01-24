@@ -41,6 +41,7 @@ use App\Http\Controllers\Hospital\HospitalAppointmentController;
 use App\Http\Controllers\Hospital\HospitalProfileController;
 use App\Http\Controllers\Hospital\HospitalNotificationController;
 use App\Http\Controllers\Hospital\HospitalSettingsController;
+use App\Http\Controllers\Hospital\HospitalReportsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -195,6 +196,8 @@ Route::prefix('hospital')
 
             // Dashboard
             Route::get('/dashboard', [HospitalDashboardController::class, 'index'])->name('dashboard');
+            Route::get('/reports', [HospitalReportsController::class, 'index'])->name('reports.index');
+            Route::get('/reports/data', [HospitalReportsController::class, 'data'])->name('reports.data');
 
             /*
             |--------------------------------------------------------------------------

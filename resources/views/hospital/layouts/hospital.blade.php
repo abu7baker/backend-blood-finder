@@ -73,6 +73,7 @@
                 <i class="fas fa-gauge"></i> <span>لوحة التحكم</span>
             </a>
 
+         
             <a href="{{ route('hospital.requests.index') }}"
                class="sidebar-item {{ request()->routeIs('hospital.requests.*') ? 'active' : '' }}">
                 <i class="fas fa-inbox"></i> <span>طلبات الدم</span>
@@ -92,16 +93,24 @@
                class="sidebar-item {{ request()->routeIs('hospital.notifications.*') ? 'active' : '' }}">
                 <i class="fas fa-bell"></i> <span>الإشعارات</span>
             </a>
+            
+               <a href="{{ route('hospital.reports.index') }}"
+               class="sidebar-item {{ request()->routeIs('hospital.reports.*') ? 'active' : '' }}">
+                <i class="fas fa-chart-line"></i> <span>التقارير والإحصائيات</span>
+            </a>
+
 
             <a href="{{ route('hospital.profile.index') }}"
                class="sidebar-item {{ request()->routeIs('hospital.profile.*') ? 'active' : '' }}">
                 <i class="fas fa-user"></i> <span>الملف الشخصي</span>
             </a>
 
+
             <a href="{{ route('hospital.settings.index') }}"
                class="sidebar-item {{ request()->routeIs('hospital.settings.*') ? 'active' : '' }}">
                 <i class="fas fa-gear"></i> <span>الإعدادات</span>
             </a>
+
 
         </nav>
 

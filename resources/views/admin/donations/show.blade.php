@@ -30,13 +30,17 @@
         <tr>
             <th>نوع التبرع</th>
             <td>
-                @if($donation->request_id)
+                @if(($donation->source === 'blood_request') || $donation->request_id)
                     <span class="badge bg-primary">
-                        تبرع عبر طلب دم (رقم الطلب: #{{ $donation->request_id }})
+                        تبرع عبر موافقة على طلب دم (رقم الطلب: #{{ $donation->request_id }})
+                    </span>
+                @elseif($donation->source === 'appointment')
+                    <span class="badge bg-info text-dark">
+                        تبرع عبر موعد في المستشفى
                     </span>
                 @else
-                    <span class="badge bg-info text-dark">
-                        تبرع مباشر عبر موعد في المستشفى
+                    <span class="badge bg-secondary">
+                        غير محدد
                     </span>
                 @endif
             </td>

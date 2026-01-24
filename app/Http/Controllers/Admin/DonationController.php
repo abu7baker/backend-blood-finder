@@ -133,6 +133,7 @@ class DonationController extends Controller
             'hospital_id'   => $req->hospital_id,
             'request_id'    => $req->id,
             'blood_type'    => $req->blood_type,
+            'source'        => 'blood_request',
             'status'        => 'willing',
             'units_donated' => 1,
             'accepted_at'   => now(),

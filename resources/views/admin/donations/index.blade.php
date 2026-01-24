@@ -135,21 +135,21 @@
 
                               
                                                 {{-- نوع التبرع --}}
-                <td>
-                    @if($d->source === 'blood_request')
-                        <span class="badge bg-primary">
-                            عبر طلب دم (#{{ $d->request_id }})
-                        </span>
-                    @elseif($d->source === 'appointment')
-                        <span class="badge bg-info text-dark">
-                            تبرع مباشر (موعد)
-                        </span>
-                    @else
-                        <span class="badge bg-secondary">
-                            غير محدد
-                        </span>
-                    @endif
-                </td>
+                                    <td>
+                                        @if(($d->source === 'blood_request') || $d->request_id)
+                                            <span class="badge bg-primary">
+                                                عبر موافقة على طلب دم (#{{ $d->request_id }})
+                                            </span>
+                                        @elseif($d->source === 'appointment')
+                                            <span class="badge bg-info text-dark">
+                                                عبر موعد تبرع
+                                            </span>
+                                        @else
+                                            <span class="badge bg-secondary">
+                                                غير محدد
+                                            </span>
+                                        @endif
+                                    </td>
 
 
                                     {{-- الحالة --}}
