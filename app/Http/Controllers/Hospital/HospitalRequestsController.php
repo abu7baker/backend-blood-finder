@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Hospital;
 use App\Http\Controllers\Controller;
 use App\Models\BloodRequest;
 use App\Models\BloodStock;
+use App\Models\Donation;
 use App\Models\Notification;
 use App\Models\RequestStatusHistory;
 use App\Models\RequestUser;
@@ -170,6 +171,33 @@ class HospitalRequestsController extends Controller
 
             if ($stock && $stock->units_available >= $bloodRequest->units_requested) {
                 $stock->decrement('units_available', $bloodRequest->units_requested);
+            }
+
+            $acceptedDonor = RequestUser::where('blood_request_id', $bloodRequest->id)
+                ->where('status', 'accepted')
+                ->first();
+
+            if ($acceptedDonor) {
+                $existingDonation = Donation::where('request_id', $bloodRequest->id)
+                    ->where('donor_id', $acceptedDonor->user_id)
+                    ->first();
+
+                $donationData = [
+                    'donor_id'      => $acceptedDonor->user_id,
+                    'hospital_id'   => $bloodRequest->hospital_id,
+                    'request_id'    => $bloodRequest->id,
+                    'blood_type'    => $bloodRequest->blood_type,
+                    'units_donated' => $bloodRequest->units_requested,
+                    'donated_at'    => now(),
+                    'status'        => 'completed',
+                    'source'        => 'blood_request',
+                ];
+
+                if ($existingDonation) {
+                    $existingDonation->update($donationData);
+                } else {
+                    Donation::create($donationData);
+                }
             }
         }
 

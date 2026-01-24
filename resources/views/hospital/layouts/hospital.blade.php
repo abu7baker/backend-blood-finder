@@ -142,7 +142,12 @@
 
                     <div>
                         <h4 class="mb-0 fw-bold">@yield('title')</h4>
-                        <small class="text-muted">مرحبا {{ auth()->user()->full_name }}</small>
+                        <small class="text-muted"> @if(auth()->user()->role === 'admin')
+    مرحبًا مدير النظام
+@elseif(auth()->user()->role === 'hospital')
+    مرحبًا {{ auth()->user()->hospital->name }}
+@endif
+</small>
                     </div>
                 </div>
 
